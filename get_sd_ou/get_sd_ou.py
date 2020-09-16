@@ -1,3 +1,4 @@
+#%%
 import logging
 import queue
 import re
@@ -30,8 +31,8 @@ def soup_maker (url, headers={}):
 
 
 class Find():
-    def __init__(self, soup):
-        self.soup = soup
+    def __init__(self, **kargs):
+        self.soup = kargs['soup']
     
     def xpath(self, xpath):
         raise(Exception('Not implimented yet'))
@@ -44,10 +45,11 @@ class Find():
         element = self.soup
         for num, selector_i in enumerate(selector.split('>')):
             element = element.select_one(selector_i)
-            if element:
-                print('[find]', num, selector_i, element.text)
+            if element.content:
+                logger.debug('[Find] selector_num:({}) selector:({}) element:({})'.format(num, selector_i, element.content[:20]))
             else :
-                print('[find]', num, selector_i, 'element is none')
+                logger.debug('[Find] selector_num:({}) selector:({}) element is none'.format(num, selector_i))
+                return None
         return element
     
     def get_urls(self, include=[], _debug=False):
@@ -66,13 +68,13 @@ class Find():
         raise(Exception('Not implimented yet'))
 
 class Url():
-    def __init__(self, url):
-        self.url = url
+    def __init__(self, **kargs):
+        self.url = kargs['url']
         self._response_headers = None
         self._response = None
         self._content = None
 
-        url_parts = urlparse(url)
+        url_parts = urlparse(self.url)
         _query = frozenset(parse_qsl(url_parts.query))
         _path = unquote_plus(url_parts.path)
         self.url_parts = url_parts._replace(query=_query, path=_path)
@@ -91,7 +93,7 @@ class Url():
         return True
 
     @property
-    def reponse(self):
+    def response(self):
         if not self._response:
             self._response = requests.get(self.url)
         return self._response
@@ -119,7 +121,7 @@ class Url():
 
 class Page(Find, Url):
     def __init__(self, url, headers={}, do_soup=False):
-        super(Page, self).__init__(url)
+        super(Page, self).__init__(url=url, soup=None)
         self.seen_count = 0
         self.text = ''
         if do_soup:
@@ -173,7 +175,7 @@ class Article(Page):
     @property
     def authors(self, parameter_list):
         if not self._authors:
-            
+            pass
         return self._authors
 
 class Seen_table():
@@ -219,28 +221,28 @@ def add_queue(base_url, url):
 
 
 ###### SEARCH PAGE TEST
-search_url = 'https://www.sciencedirect.com/search?date={}&affiliations={}&show={}&sortBy=date'
+base_url = 'https://www.sciencedirect.com/'
+search_url = 'https://www.sciencedirect.com/search?date={}&show={}&sortBy=date'
 article_history = {} 
 author_history = {}
 start_year = 2010
 end_year = 2020
 
-year = '2018-2020'
-affiliations = 'iran'
+year = '2020'
 show_count = 25
 
-search_page = Page(search_url.format(year, affiliations, show_count), do_soup=True, headers=headers)
+search_page = Page(search_url.format(year, show_count), do_soup=True, headers=headers)
 
-for i in range(show_count):
-    article = search_page.select_one(f'li.ResultItem:nth-child({i+1}) > div:nth-child(1) > div:nth-child(1) > h2:nth-child(2) > span:nth-child(1) > a:nth-child(1)')
-    print(i+1, end=' == ')
-    if article :
-        article_history[article.get('href')] = [] #authors add here
-        print("article_added")
-    else:
-        print(type(article), article)
+#%%
+search_result = search_page.soup.find_all('a')
+articles = []
+for article in search_result :
+    if article.get('href'):
+        article_link = article.get('href')
+        if 'pii' in article_link and not 'pdf' in article_link:
+            articles.append(urljoin(base_url, article_link))
 
-
+#%%
 def worker():
     while True:
         page_inst = main_queue.get()
@@ -259,3 +261,5 @@ def worker():
 # block until all tasks are done
 main_queue.join()
 print('All work completed')    
+
+# %%
