@@ -13,7 +13,7 @@ class Url():
     def is_downloadable(self):
         """
         Does the url contain a downloadable resource
-        """
+        """-
         h = requests.head(self.url, allow_redirects=True)
         header = h.headers
         content_type = header.get('content-type')
@@ -133,18 +133,3 @@ class Seen_table():
             url = Page(url)
         #print(f'(Seen_table) [in_in] <{hash(url) in self.hash_table.keys()}> {url.url}')
         return hash(url) in self.hash_table.keys()
-
-
-seen_table = Seen_table()
-
-main_queue = queue.Queue()
-
-
-def add_queue(base_url, url):
-    #join the url -> Page the url -> add to queue & add to seen_table
-    url = urljoin(base_url, url)
-    page = Page(url)
-    if seen_table.is_in(page):
-        return
-    seen_table.add_url(page)
-    main_queue.put(page)
