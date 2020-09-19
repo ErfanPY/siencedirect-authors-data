@@ -1,5 +1,6 @@
 #%%
-from get_sd_ou.class_util import Page
+from get_sd_ou.class_util import Page, Seen_table
+from get_sd_ou import database_util as dbutil
 
 import logging
 import queue
@@ -47,47 +48,6 @@ def soup_maker (url, headers={}):
         raise(requests.exceptions.ConnectionError("[soup_maker] couldn't make a connection"))
     soup = bs(content, 'html.parser')
     return soup
-
-
-class Find():
-    def __init__(self, **kargs):
-        self.soup = kargs['soup']
-    
-    def xpath(self, xpath):
-        raise(Exception('Not implimented yet'))
-
-    def find_get(self, selector, get_attr):
-        selected = self.soup.select_one(selector)
-        return selected
-    
-    def select_one(self, selector):
-        element = self.soup
-        for num, selector_i in enumerate(selector.split('>')):
-            element = element.select_one(selector_i)
-            if element.content:
-                logger.debug('[Find] selector_num:({}) selector:({}) element:({})'.format(num, selector_i, element.content[:20]))
-            else :
-                logger.debug('[Find] selector_num:({}) selector:({}) element is none'.format(num, selector_i))
-                return None
-        return element
-    
-    def get_urls(self, include=[], _debug=False):
-        #TODO include list shoud be regex
-        res_urls = []
-        link_divs = self.soup.find_all('a')
-        
-        for div in link_divs:
-            href = div.get('href')
-            if href and all([i in href for i in include]):
-                res_urls.append(href)
-                
-        return res_urls
-
-    def get_texts(self, include=[], _debug=False):
-        raise(Exception('Not implimented yet'))
-
-
-
 
 ###### SEARCH PAGE TEST
 base_url = 'https://www.sciencedirect.com/'
