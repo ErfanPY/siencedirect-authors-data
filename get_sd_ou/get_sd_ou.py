@@ -37,24 +37,20 @@ def soup_maker (url, headers={}):
     soup = bs(content, 'html.parser')
     return soup
 
-def main():
-
-    ###### SEARCH PAGE TEST
-    base_url = 'https://www.sciencedirect.com/'
-    search_url = 'https://www.sciencedirect.com/search?date={}&show={}&sortBy=date'
-    article_history = {} 
-    author_history = {}
-    start_year = 2010
-    end_year = 2020
-
-    year = '2020'
-    show_count = 25
+def search_gen(year, show_per_page):
+    offset = 0
+    search_url = f'https://www.sciencedirect.com/search?date={year}&show={show_per_page}&offset={offset}&sortBy=date'
+    pages_count = Search_page(search_url).pages_count
+    total_page_count = show_per_page * pages_count
+    while(offset < total_page_count):
+        yield search_url
+        offset += show_per_page
 
 #%%-
 def worker():
     while True:
         if main_queue.empty():
-            next_search = Search_page(next(search_url_gen))
+            next_search = Search_page(next(search_url_gen_obj))
             next_articles = next_search.get_articles()
             [main_queue.put(next_article) for next_article in next_articles]
 
@@ -64,9 +60,17 @@ def worker():
         dbutil.insert_article_data(article_data)
         
         main_queue.task_done()
-    
+
+base_url = 'https://www.sciencedirect.com/'
+article_history = {} 
+author_history = {}
+start_year = 2010
+end_year = 2020
+
+year = '2020'
+show_per_page = 25
+
+
 [threading.Thread(target=worker).start() for _ in range(2)]
 
-# block until all tasks are done
 main_queue.join()
-print('All work completed')

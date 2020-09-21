@@ -1,5 +1,5 @@
 class Url():
-    def __init__(self, **kargs):
+    def __init__(self, *args, **kargs):
         self.url = kargs['url']
         self._response_headers = None
         self._response = None
@@ -51,7 +51,7 @@ class Url():
         return self.url_parts[1:3] == other.url_parts[1:3]
 
 class Find():
-    def __init__(self, **kargs):
+    def __init__(self, *args, **kargs):
         self.soup = kargs['soup']
     
     def xpath(self, xpath):
@@ -133,6 +133,12 @@ class Article(Page):
         self.pii = self.get_pii()
         self.bibtex = self.export_bibtext()
     
+    def get_article_data(self, *needed_data):
+        """ this is the main function of article it collect all data we need from an article (needed data is spesified from input) 
+        it get authors name and email and affiliation from article and mendely link if exist
+        """
+        raise NotImplementedError
+    
     def export_bibtex(self):
         bibtex_url = Url(f'https://www.sciencedirect.com/sdfe/arp/cite?pii={self.pii}&format=text/x-bibtex&wi')
 
@@ -144,8 +150,31 @@ class Article(Page):
     @property
     def authors(self, parameter_list):
         if not self._authors:
-            pass
+            raise NotImplementedError
         return self._authors
+
+class Search_page (Page):
+    def __init__(self, url):
+        super().__init__(url)
+        self.url = url
+        self._pages_count = -1
+    
+    def get_articles(self):
+        search_result = self.soup.find_all('a')
+        articles = []
+        for article in search_result :
+            if article.get('href'):
+                article_link = article.get('href')
+                if 'pii' in article_link and not 'pdf' in article_link:
+                    articles.append(urljoin(base_url, article_link))
+    @property
+    def pages_count(self):
+        return self.soup.select_one('#srp-pagination > li:nth-child(1)')
+    def next_search_url(self):
+        next_url = self.soup.select_one('.pagination-link > a:nth-child(1)').get('href')
+        return urljoin(base_url, next_url)
+    def export_bibtex(self, file):
+        raise NotImplementedError
 
 class Seen_table():
     #TODO conflict betwine checking hash of page instance to check sameness
