@@ -1,5 +1,4 @@
 #%%
-import logging
 import queue
 import re
 from re import search
@@ -11,15 +10,9 @@ from bs4 import BeautifulSoup as bs
 
 from get_sd_ou.databse_util import get_article_authors
 from get_sd_ou.class_util import Article, Search_page
+from get_sd_ou import init_logger
 
-
-fh = logging.FileHandler('logs.log')
-fh.setLevel(logging.INFO)
-ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', handlers=[fh, ch])
-logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
+logger = init_logger()
 
 headers = {
         'Accept' : 'application/json',
@@ -50,10 +43,12 @@ def search_gen(year, show_per_page):
 def worker():
     while True:
         if main_queue.empty():
+            logger.debug('get next search page')
             next_search = Search_page(next(search_url_gen_obj))
             next_articles = next_search.get_articles()
             [main_queue.put(next_article) for next_article in next_articles]
 
+        logger.debug('get articles from serach')
         article_url = main_queue.get()
         article = Article(article_url, headers)
         article_data = article.get_data()
