@@ -1,7 +1,5 @@
 #%%
 import queue
-import re
-from re import search
 import threading
 from urllib.parse import parse_qsl, unquote_plus, urljoin, urlparse
 
