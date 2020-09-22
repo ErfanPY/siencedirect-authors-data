@@ -1,6 +1,8 @@
+#%%
 class Url():
-    def __init__(self, *args, **kargs):
-        self.url = kargs['url']
+    def __init__(self, url, *args, **kwargs):
+        logger.debug('[Url] initiated')
+        self.url = url
         self._response_headers = None
         self._response = None
         self._content = None
@@ -51,8 +53,9 @@ class Url():
         return self.url_parts[1:3] == other.url_parts[1:3]
 
 class Find():
-    def __init__(self, *args, **kargs):
-        self.soup = kargs['soup']
+    def __init__(self, *args, **kwargs):
+        logger.debug('[Find] initiated')
+        self.soup = kwargs['soup']
     
     def xpath(self, xpath):
         raise(Exception('Not implimented yet'))
@@ -90,6 +93,7 @@ class Find():
 
 class Page(Find, Url):
     def __init__(self, url, headers={}, do_soup=False):
+        logger.debug('[Page] initiated')
         super(Page, self).__init__(url=url, soup=None)
         self.seen_count = 0
         self.text = ''
@@ -127,34 +131,56 @@ class Page(Find, Url):
     def soup(self):
         del self._soup
 
+class Author():
+    def __init__(self, name, email='', mendely='', scopus='', affiliation=''):
+        logger.debug('[Author] initiated')
+        self.name = name
+        self.email = email
+        self.mendely = mendely
+        self.scopus = scopus
+        self.affiliation = affiliation
+
 class Article(Page):
-    def __inti__(self, url):
-        super(Article, self).__init__(url)
+    def __inti__(self, url, do_bibtex=False, *args, **kwargs):
+        logger.debug('[Article] initiated')
+        super().__init__(url, *args, **kwargs)
         self.pii = self.get_pii()
-        self.bibtex = self.export_bibtext()
-    
+        self.bibtex = None
+        if do_bibtex: self.bibtex = self.export_bibtex()
+        self._authors = []
+
     def get_article_data(self, *needed_data):
         """ this is the main function of article it collect all data we need from an article (needed data is spesified from input) 
         it get authors name and email and affiliation from article and mendely link if exist
         """
+        data = {'authors':self.authors, 
+                }
+
         raise NotImplementedError
     
-    def export_bibtex(self):
+    def export_bibtex(self, download=False):
         bibtex_url = Url(f'https://www.sciencedirect.com/sdfe/arp/cite?pii={self.pii}&format=text/x-bibtex&wi')
 
-        with open(f'articles/{self.pii}.bib', 'ab') as f:
-            f.write
-        
-        return bibtex_url
-    
+        if not download : 
+            return {'bibtex_url':bibtex_url}
+        bibtex_path = f'articles/{self.pii}.bib'
+        with open(bibtex_path, 'ab') as f:
+            f.write(requests.get(bibtex_url, headers=self.headers))
+        return {'bibtex_url':bibtex_url, 'bibtex_path':bibtex_path}
+           
     @property
-    def authors(self, parameter_list):
-        if not self._authors:
-            raise NotImplementedError
+    def authors(self):
+        if self.getattr('_authors'):
+            authors_element = [element.find('span', {'class':'content'}) for element in self.soup.select_one('#author-group').find_all('a')]
+            return authors_element
         return self._authors
 
+print('test')
+print('test')
+#%%
 class Search_page (Page):
     def __init__(self, url):
+        logger.debug('[Search_page] initiated')
         super().__init__(url)
         self.url = url
         self._pages_count = -1
@@ -167,12 +193,16 @@ class Search_page (Page):
                 article_link = article.get('href')
                 if 'pii' in article_link and not 'pdf' in article_link:
                     articles.append(urljoin(base_url, article_link))
+        return articles
+    
     @property
     def pages_count(self):
         return self.soup.select_one('#srp-pagination > li:nth-child(1)')
+
     def next_search_url(self):
         next_url = self.soup.select_one('.pagination-link > a:nth-child(1)').get('href')
         return urljoin(base_url, next_url)
+    
     def export_bibtex(self, file):
         raise NotImplementedError
 
