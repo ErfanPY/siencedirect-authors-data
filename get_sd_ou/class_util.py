@@ -1,11 +1,19 @@
 #%%
 class Url():
-    def __init__(self, url, *args, **kwargs):
+    def __init__(self, url, headers={}, **kwargs):
         logger.debug('[Url] initiated')
         self.url = url
         self._response_headers = None
-        self._response = None
-        self._content = None
+        #self._response = None #this would be created when requested
+        #self._content = None #this would be created when requested
+
+        if not headers:
+            logger.debug('[Url] setting header')
+            self.headers = {
+                    'Accept' : 'application/json, text/plain, */*',
+                    'user-agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:80.0) Gecko/20100101 Firefox/80.0'
+                    }
+
 
         url_parts = urlparse(self.url)
         _query = frozenset(parse_qsl(url_parts.query))
@@ -27,8 +35,13 @@ class Url():
 
     @property
     def response(self):
-        if not self._response:
-            self._response = requests.get(self.url)
+        try :
+            self.__getattribute__('_response')
+            logger.debug('[Url] response exist')
+            return self._response
+        except AttributeError :
+            logger.debug('[Url] getting url response')
+            self._response = requests.get(self.url, self.headers)
         return self._response
 
     def _get_filename_from_cd(cd):
@@ -53,9 +66,9 @@ class Url():
         return self.url_parts[1:3] == other.url_parts[1:3]
 
 class Find():
-    def __init__(self, *args, **kwargs):
+    def __init__(self, soup, **kwargs):
         logger.debug('[Find] initiated')
-        self.soup = kwargs['soup']
+        self.soup = soup
     
     def xpath(self, xpath):
         raise(Exception('Not implimented yet'))
@@ -65,6 +78,7 @@ class Find():
         return selected
     
     def select_one(self, selector):
+        raise NotImplementedError
         element = self.soup
         for num, selector_i in enumerate(selector.split('>')):
             element = element.select_one(selector_i)
@@ -90,15 +104,16 @@ class Find():
     def get_texts(self, include=[], _debug=False):
         raise(Exception('Not implimented yet'))
 
-
-class Page(Find, Url):
-    def __init__(self, url, headers={}, do_soup=False):
+#%%
+class Page(Url, Find):
+    def __init__(self, url, do_soup=False, **kwargs):
         logger.debug('[Page] initiated')
-        super(Page, self).__init__(url=url, soup=None)
+        super().__init__(url=url, soup=None)
+
         self.seen_count = 0
         self.text = ''
         if do_soup:
-            self._soup = soup_maker(url, headers=headers)
+            self._soup = self.soup_maker()
     def __hash__(self):
         return hash(self.url.url_parts[1:3])
 
@@ -115,12 +130,26 @@ class Page(Find, Url):
 
         return res_urls
     
+    def _soup_maker(self):
+        try:
+            content = self.response.content
+        except requests.exceptions.ConnectionError:
+            raise(requests.exceptions.ConnectionError("[Page] [soup_maker] couldn't make a connection"))
+        soup = bs(content, 'html.parser')
+        return soup
+
+
     @property
     def soup(self):
         try :
             self.__getattribute__('_soup')
+            if self._soup :
+                logger.debug('[Page] soup exist')
+                return self._soup
         except AttributeError :
-            self._soup = soup_maker(self.url)
+            pass    
+        self._soup = self._soup_maker()
+        logger.debug(f'[Page] soup made len_soup: {len(str(self._soup))}')
         return self._soup
     
     @soup.setter
@@ -140,14 +169,21 @@ class Author():
         self.scopus = scopus
         self.affiliation = affiliation
 
+
+#%%
 class Article(Page):
-    def __inti__(self, url, do_bibtex=False, *args, **kwargs):
+    def __init__(self, url, do_bibtex=False, *args, **kwargs):
         logger.debug('[Article] initiated')
         super().__init__(url, *args, **kwargs)
+        self.url = url
         self.pii = self.get_pii()
         self.bibtex = None
         if do_bibtex: self.bibtex = self.export_bibtex()
         self._authors = []
+
+    def get_pii(self):
+        return self.url.split('/')[-1].replace('#!', '')
+
 
     def get_article_data(self, *needed_data):
         """ this is the main function of article it collect all data we need from an article (needed data is spesified from input) 
@@ -170,13 +206,14 @@ class Article(Page):
            
     @property
     def authors(self):
-        if self.getattr('_authors'):
-            authors_element = [element.find('span', {'class':'content'}) for element in self.soup.select_one('#author-group').find_all('a')]
+        if not self.__getattribute__('_authors'):
+            logger.debug('[Article] get authors')
+            elements = self.soup.select_one('#author-group').find_all('a')
+            return elements
+            authors_element = [element.find('span', {'class':'content'}) for element in elements]
             return authors_element
         return self._authors
 
-print('test')
-print('test')
 #%%
 class Search_page (Page):
     def __init__(self, url):

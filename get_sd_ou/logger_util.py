@@ -2,12 +2,11 @@
 import logging
 
 def init_logger(**kwargs):
-    input(type(kwargs))
     file_handler = kwargs.get('file_handler', 'sience_direct_logs.log')
     file_handler_level = kwargs.get('file_handler_level', logging.INFO)
     stream_handler = kwargs.get('stream_handler', True)
     stream_handler_level = kwargs.get('stream_handler_level', logging.DEBUG)
-    format = kwargs.get('format', '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    format = kwargs.get('format', '%(asctime)s - %(levelname)s - %(message)s')
     logger_level = kwargs.get('logger_level', logging.DEBUG)
 
     fh = logging.FileHandler('logs.log')
