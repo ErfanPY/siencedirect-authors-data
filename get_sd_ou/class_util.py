@@ -41,7 +41,7 @@ class Url():
             return self._response
         except AttributeError :
             logger.debug('[Url] getting url response')
-            self._response = requests.get(self.url, self.headers)
+            self._response = requests.get(self.url, headers=self.headers)
         return self._response
 
     def _get_filename_from_cd(cd):
