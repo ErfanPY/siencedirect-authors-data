@@ -1,4 +1,3 @@
-#%%
 import queue
 from re import search
 import threading
@@ -10,7 +9,7 @@ from bs4 import BeautifulSoup as bs
 from .__init__ import *
 from .class_util import Article, Search_page
 from .database_util import *
-#%%
+
 def soup_maker (url, headers={}):
     try:
         content = requests.get(url, headers=headers).content
@@ -38,8 +37,6 @@ def next_page_gen(year, show_per_page=100):
         search = Search_page(search_url)
         search_url = search.next_page()
 
-
-#%%-
 def worker():
     global next_page_gen_obj
     continue_search = True
@@ -66,8 +63,6 @@ def worker():
         
         main_queue.task_done()
 
-#%%
-
 headers = {
         'Accept' : 'application/json',
         'user-agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:80.0) Gecko/20100101 Firefox/80.0'
@@ -87,7 +82,7 @@ main_queue = None
 threads = None
 next_year_gen_obj = None
 next_page_gen_obj = None
-#%%
+
 def start_search(init_year):
     global threads
     global main_queue
@@ -121,5 +116,3 @@ def stop_search():
     pass
 
 start_search(2020)
-
-print('Fuck this life')
