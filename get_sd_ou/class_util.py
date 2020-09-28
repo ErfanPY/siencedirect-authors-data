@@ -1,4 +1,8 @@
 #%%
+import re
+from .__init__ import *
+logger = logging.getLogger('mainLogger')
+
 class Url():
     def __init__(self, url, headers={}, **kwargs):
         logger.debug('[Url] initiated')
@@ -79,6 +83,7 @@ class Find():
     
     def select_one(self, selector):
         raise NotImplementedError
+        """
         element = self.soup
         for num, selector_i in enumerate(selector.split('>')):
             element = element.select_one(selector_i)
@@ -88,6 +93,7 @@ class Find():
                 logger.debug('[Find] selector_num:({}) selector:({}) element is none'.format(num, selector_i))
                 return None
         return element
+        """
     
     def get_urls(self, include=[], _debug=False):
         #TODO include list shoud be regex
@@ -203,15 +209,24 @@ class Article(Page):
         with open(bibtex_path, 'ab') as f:
             f.write(requests.get(bibtex_url, headers=self.headers))
         return {'bibtex_url':bibtex_url, 'bibtex_path':bibtex_path}
-           
+
+    def _author_from_tag_a(tag_a):
+        full_name = ' '.join([i.text for i in tag_a.select('.text')])
+        is_coresponde = (tag_a.select('.icon-person'))
+        has_email = (tag_a.select('.icon-envelope'))
+        #return {'full_name':full_name, 'is_coresponde':is_coresponde, 'has_email':has_email}
+        author = Author(name = full_name)
+        return author
+
     @property
     def authors(self):
+        # country affiliation regex : #name\":\"country\",\"_\":\"(\w*)\"
+        # email regex : \"type\":\"email\",\"href\":\"mailto:([a-z0-9]+[._]?[a-z0-9]+@\w+[.][^\"]*)\"
         if not self.__getattribute__('_authors'):
             logger.debug('[Article] get authors')
             elements = self.soup.select_one('#author-group').find_all('a')
-            return elements
-            authors_element = [element.find('span', {'class':'content'}) for element in elements]
-            return authors_element
+            authors = [self._author_from_tag_a(tag_a) for tag_a in elements] 
+            self._authors = authors
         return self._authors
 
 #%%
@@ -220,25 +235,31 @@ class Search_page (Page):
         logger.debug('[Search_page] initiated')
         super().__init__(url)
         self.url = url
-        self._pages_count = -1
     
     def get_articles(self):
+        logger.debug('[Search_page] getting articles')
         search_result = self.soup.find_all('a')
         articles = []
         for article in search_result :
             if article.get('href'):
                 article_link = article.get('href')
                 if 'pii' in article_link and not 'pdf' in article_link:
-                    articles.append(urljoin(base_url, article_link))
+                    articles.append(urljoin(self.url_parts.netloc, article_link))
+                    logger.debug('[Search_page] one article added')
+        logger.debug('[Search_page] all articels got')
         return articles
     
     @property
     def pages_count(self):
         return self.soup.select_one('#srp-pagination > li:nth-child(1)')
 
-    def next_search_url(self):
-        next_url = self.soup.select_one('.pagination-link > a:nth-child(1)').get('href')
-        return urljoin(base_url, next_url)
+    def next_page(self):
+        next_url = self.soup.select_one('li.next-link > a')
+        try:
+            href = next_url.get('href')
+            return urljoin(self.url_parts.netloc, href)
+        except AttributeError:
+            return None
     
     def export_bibtex(self, file):
         raise NotImplementedError
