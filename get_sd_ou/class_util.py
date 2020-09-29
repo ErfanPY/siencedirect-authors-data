@@ -5,14 +5,13 @@ logger = logging.getLogger('mainLogger')
 
 class Url():
     def __init__(self, url, headers={}, **kwargs):
-        logger.debug('[Url] initiated')
+        logger.debug('[Url] initiated | url: %s', url)
         self.url = url
         self._response_headers = None
         #self._response = None #this would be created when requested
         #self._content = None #this would be created when requested
 
         if not headers:
-            logger.debug('[Url] setting header')
             self.headers = {
                     'Accept' : 'application/json, text/plain, */*',
                     'user-agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:80.0) Gecko/20100101 Firefox/80.0'
@@ -113,7 +112,7 @@ class Find():
 #%%
 class Page(Url, Find):
     def __init__(self, url, do_soup=False, **kwargs):
-        logger.debug('[Page] initiated')
+        logger.debug('[Page] initiated | url: %s', url)
         super().__init__(url=url, soup=None)
 
         self.seen_count = 0
@@ -198,7 +197,7 @@ class Article(Page):
         data = {'authors':self.authors, 
                 }
 
-        raise NotImplementedError
+        return data
     
     def export_bibtex(self, download=False):
         bibtex_url = Url(f'https://www.sciencedirect.com/sdfe/arp/cite?pii={self.pii}&format=text/x-bibtex&wi')
@@ -210,7 +209,7 @@ class Article(Page):
             f.write(requests.get(bibtex_url, headers=self.headers))
         return {'bibtex_url':bibtex_url, 'bibtex_path':bibtex_path}
 
-    def _author_from_tag_a(tag_a):
+    def _author_from_tag_a(self, tag_a):
         full_name = ' '.join([i.text for i in tag_a.select('.text')])
         is_coresponde = (tag_a.select('.icon-person'))
         has_email = (tag_a.select('.icon-envelope'))
@@ -232,12 +231,14 @@ class Article(Page):
 #%%
 class Search_page (Page):
     def __init__(self, url):
-        logger.debug('[Search_page] initiated')
+        logger.debug('[Search_page] initiated | url: %s', url)
         super().__init__(url)
         self.url = url
+        self.query = dict(self.url_parts.query)
+        self.year = self.query['date']
     
     def get_articles(self):
-        logger.debug('[Search_page] getting articles')
+        logger.debug('[Search_page] getting articles | year: %s', self.year)
         search_result = self.soup.find_all('a')
         articles = []
         for article in search_result :
@@ -245,8 +246,8 @@ class Search_page (Page):
                 article_link = article.get('href')
                 if 'pii' in article_link and not 'pdf' in article_link:
                     articles.append(urljoin(self.url_parts.netloc, article_link))
-                    logger.debug('[Search_page] one article added')
-        logger.debug('[Search_page] all articels got')
+                    logger.debug('[Search_page] one article added | year: %s', self.year)
+        logger.debug('[Search_page] all articels got | year: %s', self.year)
         return articles
     
     @property

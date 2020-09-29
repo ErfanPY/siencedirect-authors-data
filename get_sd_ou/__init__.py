@@ -17,11 +17,17 @@ LOGGING_CONFIG = {
     },
     'handlers': { 
         'default': { 
-            'level': 'INFO',
+            'level': 'DEBUG',
             'formatter': 'standard',
             'class': 'logging.StreamHandler',
             'stream': 'ext://sys.stdout',  # Default is stderr
         },
+        'file':{
+            'level': 'DEBUG',
+            'formatter': 'standard',
+            'class': 'logging.FileHandler',
+            'filename': 'get_sd_ou.log',
+        }
     },
     'loggers': { 
         '': {  # root logger
@@ -30,7 +36,7 @@ LOGGING_CONFIG = {
             'propagate': False
         },
         'mainLogger': { 
-            'handlers': ['default'],
+            'handlers': ['default', 'file'],
             'level': 'DEBUG',
             'propagate': False
         },

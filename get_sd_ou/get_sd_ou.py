@@ -20,20 +20,20 @@ def soup_maker (url, headers={}):
 
 def next_year_gen(init_year=2020, year_step=-1):
     """ iterate through all year fron init_year """
-    logger.debug('[main] [next_year_gen] initiated')
     current_search_year = init_year
     while(True):
         yield current_search_year
-        logger.debug('[main] [next_year_gen] next made')
         current_search_year += year_step
 
 def next_page_gen(year, show_per_page=100):
     """ iterate through page of year """
-    logger.debug('[main] [next_page_gen] initiated')
+    page = 1
+    logger.debug('[main] [next_page_gen] initiated | year: %s, page=%s', year, page)
     search_url = f'https://www.sciencedirect.com/search?date={year}&show={show_per_page}&sortBy=date'
     while True :
-        yield search_url
-        logger.debug('[main] [next_page_gen] next made')
+        yield {'url':search_url, 'page_number':page, 'year':year}
+        page += 1
+        logger.debug('[main] [next_page_gen] next page made | year: %s, page=%s', year, page)
         search = Search_page(search_url)
         search_url = search.next_page()
 
@@ -43,21 +43,23 @@ def worker():
     while continue_search:
         if main_queue.empty():
             next_page = next(next_page_gen_obj)
-            if next_page:
-                logger.debug('[worker] get page')
-                search = Search_page(next_page)
+            if next_page['url']:
+                logger.debug('[worker] get artciles from year: %s , page: %s', next_page['year'], next_page['page_number'])
+
+                search = Search_page(next_page['url'])
                 articles = search.get_articles()
                 [main_queue.put(article) for article in articles]
-                logger.debug('[worker] next page article added')
+
+                logger.debug('[worker] page artciles got from year: %s , page: %s', next_page['year'], next_page['page_number'])
             else:
-                logger.debug('[worker] get next year')
                 next_year = next(next_year_gen_obj)
+                logger.debug('[worker] go to next year search: %s', next_year)
                 next_page_gen_obj = next_page_gen(next_year)
-                logger.debug('[worker] current year set to next year')
+
                 continue
-        logger.debug('get articles from serach')
-        article_url = main_queue.get()
+        article_url = urljoin(base_url , main_queue.get())
         article = Article(article_url, headers)
+        logger.debug('get data of article | pii : %s', article.pii)
         article_data = article.get_article_data()
         insert_article_data(article_data)
         
@@ -93,7 +95,6 @@ def start_search(init_year):
     2) Initiate the database connection
     3) Call the worker function of each thread
     """
-    logger.info('[main] search started')
     next_year_gen_obj = next_year_gen(init_year=init_year)
     next_page_gen_obj = next_page_gen(next(next_year_gen_obj), show_per_page=show_per_page)
     main_queue = queue.Queue()
