@@ -26,7 +26,7 @@ LOGGING_CONFIG = {
             'level': 'DEBUG',
             'formatter': 'standard',
             'class': 'logging.FileHandler',
-            'filename': 'get_sd_ou.log',
+            'filename': 'get_sd_ou/get_sd_ou.log',
         }
     },
     'loggers': { 
