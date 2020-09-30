@@ -194,8 +194,7 @@ class Article(Page):
         """ this is the main function of article it collect all data we need from an article (needed data is spesified from input) 
         it get authors name and email and affiliation from article and mendely link if exist
         """
-        data = {'authors':self.authors, 
-                }
+        data = [self.pii, self.authors]
 
         return data
     
@@ -224,7 +223,7 @@ class Article(Page):
         if not self.__getattribute__('_authors'):
             logger.debug('[Article] get authors')
             elements = self.soup.select_one('#author-group').find_all('a')
-            authors = [self._author_from_tag_a(tag_a) for tag_a in elements] 
+            authors = [self._author_from_tag_a(tag_a) for tag_a in elements]
             self._authors = authors
         return self._authors
 

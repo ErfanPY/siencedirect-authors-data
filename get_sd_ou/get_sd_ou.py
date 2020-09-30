@@ -61,7 +61,7 @@ def worker():
         article = Article(article_url, headers)
         logger.debug('get data of article | pii : %s', article.pii)
         article_data = article.get_article_data()
-        insert_article_data(article_data)
+        insert_article_data(*article_data)
         
         main_queue.task_done()
 
@@ -116,4 +116,5 @@ def stop_search():
     logger.info('[main] search stoped')
     pass
 
+logger.debug('-----------------Search Start-----------------')
 start_search(2020)

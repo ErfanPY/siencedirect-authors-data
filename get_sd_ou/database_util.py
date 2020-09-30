@@ -11,13 +11,12 @@ _cursor = None
 
 def main():
   global _database
-  global _cursor
   _database = init_database()
-  _cursor = _database.cursor()
   insert_article_data('123123alibaba', ['Erfan Gh','Abas ali mamad','sogra kobra','gholi moli'])
 
 def init_database():
   global _database
+  global _cursor
   if not _database:
     _database = mysql.connector.connect(
       host="localhost",
@@ -25,6 +24,7 @@ def init_database():
       password="123456",
       database="siencedirect"
     )
+  _cursor = _database.cursor()
   return _database
 
 ### INSERT
@@ -77,8 +77,6 @@ def insert_article_data(pii, authors_name_list, database=None):
   
   authors_id = insert_multi_author(authors_name_list)
   connect_multi_article_authors(article_id, authors_id)
-  sql = ""
-  database
 
 ### UPDATE
 
