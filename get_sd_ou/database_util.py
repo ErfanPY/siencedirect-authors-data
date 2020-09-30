@@ -37,7 +37,7 @@ def insert_article(pii, title='', database=None):
   _cursor.execute(sql, val)
   _database.commit()
   article_id = _cursor.lastrowid
-  logger.debug('[database] article inserted | pii: %s  id: %s', pii, article_id)
+  logger.debug('[ database ] article inserted | pii: %s  id: %s', pii, article_id)
   return article_id
 
 def insert_author(name, email='', id='', mendely='', scopus='', affiliation='', database=None):
@@ -47,7 +47,7 @@ def insert_author(name, email='', id='', mendely='', scopus='', affiliation='', 
   _cursor.execute(sql, val)
   _database.commit()
   author_id = _cursor.lastrowid
-  logger.debug('[database] author inserted | name: %s  id: %s', name, author_id)
+  logger.debug('[ database ] author inserted | name: %s  id: %s', name, author_id)
   return author_id
 
 def connect_article_author(article_id, author_id, is_corresponde=0, database=None):
@@ -57,7 +57,7 @@ def connect_article_author(article_id, author_id, is_corresponde=0, database=Non
   val = (article_id, author_id, is_corresponde)
   _cursor.execute(sql, val)
   _database.commit()
-  logger.debug('[database] article and author connected | article_id: %s  author_id: %s', article_id, author_id)
+  logger.debug('[ database ] article and author connected | article_id: %s  author_id: %s', article_id, author_id)
 
 def insert_multi_author(authors_name_list, database=None):
   database  = database if database else init_database()

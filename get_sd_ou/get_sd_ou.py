@@ -28,12 +28,12 @@ def next_year_gen(init_year=2020, year_step=-1):
 def next_page_gen(year, show_per_page=100):
     """ iterate through page of year """
     page = 1
-    logger.debug('[main] [next_page_gen] initiated | year: %s, page=%s', year, page)
+    logger.debug('[ main ] [ next_page_gen ] __init__ | year: %s, page=%s', year, page)
     search_url = f'https://www.sciencedirect.com/search?date={year}&show={show_per_page}&sortBy=date'
     while True :
         yield {'url':search_url, 'page_number':page, 'year':year}
         page += 1
-        logger.debug('[main] [next_page_gen] next page made | year: %s, page=%s', year, page)
+        logger.debug('[ main ] [ next_page_gen ] next page made | year: %s, page=%s', year, page)
         search = Search_page(search_url)
         search_url = search.next_page()
 
@@ -44,24 +44,25 @@ def worker():
         if main_queue.empty():
             next_page = next(next_page_gen_obj)
             if next_page['url']:
-                logger.debug('[worker] get artciles from year: %s , page: %s', next_page['year'], next_page['page_number'])
+                logger.debug('[ worker ] get artciles from year: %s , page: %s', next_page['year'], next_page['page_number'])
 
                 search = Search_page(next_page['url'])
                 articles = search.get_articles()
                 [main_queue.put(article) for article in articles]
 
-                logger.debug('[worker] page artciles got from year: %s , page: %s', next_page['year'], next_page['page_number'])
+                logger.debug('[ worker ] page artciles got | year: %s , page: %s', next_page['year'], next_page['page_number'])
             else:
                 next_year = next(next_year_gen_obj)
-                logger.debug('[worker] go to next year search: %s', next_year)
+                logger.debug('[ worker ] go to next year search: %s', next_year)
                 next_page_gen_obj = next_page_gen(next_year)
 
                 continue
         article_url = urljoin(base_url , main_queue.get())
         article = Article(article_url, headers)
-        logger.debug('get data of article | pii : %s', article.pii)
+        logger.debug('[ worker ] get data of article | pii : %s', article.pii)
         article_data = article.get_article_data()
-        insert_article_data(*article_data)
+        article_data['authors'] = [author.name for author in article_data['authors']]
+        insert_article_data(*article_data.values())
         
         main_queue.task_done()
 
@@ -100,21 +101,21 @@ def start_search(init_year):
     main_queue = queue.Queue()
     #threads = [threading.Thread(target=worker) for _ in range(2)]
     #[thread.start() for thread in threads]
-    #logger.debug('[main] threads started')
+    #logger.debug('[ main ] threads started')
     worker()
     main_queue.join()
     return {'status':'200', 'msg':'threads started succesfully', 'threads':threads}
 
 def pause_search():
-    logger.info('[main] search paused')
+    logger.info('[ main ] search paused')
     pass
 def stop_search():
     """ 
     1) Commit current state to database
     2) kill threads
     """
-    logger.info('[main] search stoped')
+    logger.info('[ main ] search stoped')
     pass
 
-logger.debug('-----------------Search Start-----------------')
-start_search(2020)
+logger.debug('___________________________________________[ Search Start ]________________________________________')
+start_search(2018)
