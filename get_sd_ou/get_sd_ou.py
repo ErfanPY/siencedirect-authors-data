@@ -31,9 +31,9 @@ def next_page_gen(year, show_per_page=100):
     logger.debug('[ main ] [ next_page_gen ] __init__ | year: %s, page=%s', year, page)
     search_url = f'https://www.sciencedirect.com/search?date={year}&show={show_per_page}&sortBy=date'
     while True :
+        logger.debug('[ main ] [ next_page_gen ] next page | year: %s, page=%s, url: %s', year, page, search_url)
         yield {'url':search_url, 'page_number':page, 'year':year}
         page += 1
-        logger.debug('[ main ] [ next_page_gen ] next page made | year: %s, page=%s', year, page)
         search = Search_page(search_url)
         search_url = search.next_page()
 
@@ -99,10 +99,10 @@ def start_search(init_year):
     next_year_gen_obj = next_year_gen(init_year=init_year)
     next_page_gen_obj = next_page_gen(next(next_year_gen_obj), show_per_page=show_per_page)
     main_queue = queue.Queue()
-    #threads = [threading.Thread(target=worker) for _ in range(2)]
-    #[thread.start() for thread in threads]
-    #logger.debug('[ main ] threads started')
-    worker()
+    thread_count = 2
+    threads = [threading.Thread(target=worker) for _ in range(thread_count)]
+    [thread.start() for thread in threads]
+    logger.debug('[ main ] threads started | count: %s', thread_count)
     main_queue.join()
     return {'status':'200', 'msg':'threads started succesfully', 'threads':threads}
 
