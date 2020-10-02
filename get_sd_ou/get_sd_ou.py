@@ -99,10 +99,10 @@ def start_search(init_year):
     next_year_gen_obj = next_year_gen(init_year=init_year)
     next_page_gen_obj = next_page_gen(next(next_year_gen_obj), show_per_page=show_per_page)
     main_queue = queue.Queue()
-    thread_count = 2
-    threads = [threading.Thread(target=worker) for _ in range(thread_count)]
-    [thread.start() for thread in threads]
-    logger.debug('[ main ] threads started | count: %s', thread_count)
+    #threads = [threading.Thread(target=worker) for _ in range(2)]
+    #[thread.start() for thread in threads]
+    #logger.debug('[ main ] threads started')
+    worker()
     main_queue.join()
     return {'status':'200', 'msg':'threads started succesfully', 'threads':threads}
 
@@ -116,6 +116,6 @@ def stop_search():
     """
     logger.info('[ main ] search stoped')
     pass
-
-logger.debug('___________________________________________[ Search Start ]________________________________________')
-start_search(2018)
+if __name__ == "__main__":
+    logger.debug('___________________________________________[ Search Start ]________________________________________')
+    start_search(2018)
