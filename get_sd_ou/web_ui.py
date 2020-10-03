@@ -16,7 +16,7 @@ def start ():
 @app.route('/stop')
 def stop ():
    global search_thread
-   search_thread.
+   del search_thread
 
 @app.route('/status')
 def status ():
@@ -32,5 +32,4 @@ def article_data(pii):
 def author_data(name):
    pass
 
-if __name__ == '__main__':
-   app.run()
+app.run(host='0.0.0.0')

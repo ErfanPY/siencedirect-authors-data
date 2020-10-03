@@ -12,13 +12,16 @@ LOGGING_CONFIG = {
     'disable_existing_loggers': True,
     'formatters': { 
         'standard': { 
-            'format': '%(asctime)s [%(levelname)s] [%(threadName)s:%(thread)d] : %(message)s'
+            'format': '%(asctime)s [%(levelname)s] [%(threadName)s:%(thread)d] : %(message)s',
         },
+        'console_print': { 
+            'format': '%(message)s'
+        }
     },
     'handlers': { 
         'default': { 
             'level': 'DEBUG',
-            'formatter': 'standard',
+            'formatter': 'console_print',
             'class': 'logging.StreamHandler',
             'stream': 'ext://sys.stdout',  # Default is stderr
         },

@@ -19,9 +19,10 @@ def init_database():
   global _cursor
   if not _database:
     _database = mysql.connector.connect(
-      host="localhost",
+      host="db",
       user="root",
-      password="123456",
+      password="root",
+      port= '3306',
       database="siencedirect"
     )
   _cursor = _database.cursor()
