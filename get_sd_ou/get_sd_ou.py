@@ -6,9 +6,12 @@ from urllib.parse import parse_qsl, unquote_plus, urljoin, urlparse
 import requests
 from bs4 import BeautifulSoup as bs
 
-from .__init__ import *
+from .__init__ import logging
 from .class_util import Article, Search_page
-from .database_util import *
+from .database_util import insert_article_data
+
+logger = logging.getLogger('mainLogger')
+
 
 def soup_maker (url, headers={}):
     try:

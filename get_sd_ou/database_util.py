@@ -1,8 +1,8 @@
 import mysql.connector
 try:
-  from .__init__ import *
+  from .__init__ import logging
 except ImportError:
-  from get_sd_ou.__init__ import *
+  from get_sd_ou.__init__ import logging
 logger = logging.getLogger('mainLogger')
 
 _database = None
@@ -118,70 +118,3 @@ def get_articles_of_author(sql, val, database=None):
 
 if __name__ == "__main__":
   main()
-
-
-class Database():
-  def __init__(self, host,  user, passwrord, dbname, **kwargs):
-    self.database = mysql.connector.connect(
-      host=host,
-      user=user,
-      password=passwrord,
-      database=dbname
-    )
-    self.tables = {}
-    self.dbname = dbname
-  
-  def _is_table_in_database(self, table_name):
-    check = "SELECT count(*) FROM information_schema.TABLES WHERE (TABLE_SCHEMA = '%s') AND (TABLE_NAME = '%s');"
-    self._cursor.execute(check, (self.dbname, table_name))
-    result = self._cursor.fetch()
-    return bool(result)
-
-  def get_table(self, table_name):
-    if not table_name in self.tables: 
-      if not self._is_table_in_database(table_name):
-        return f'{table_name} is not in database'
-      self.table[table_name] = Table(self.database, table_name)
-    
-    return self.tables[table_name]
-
-  def create_table(self, table_name, **columns):
-    raise NotImplementedError
-
-class Table():
-  def __init__(self, database, table_name, **kwargs):
-    self.table_name = table_name
-    self.database = database
-  
-  def insert(self, title):
-    sql = "INSERT INTO %s (%s, %s) VALUES (%s, %s);"
-    val = (self.table_name, title)
-    res = self._cursor.execute(sql, val)
-    self._database.commit()
-    
-  def selecet():
-    pass
-  def is_row_exist(self, **kwargs):
-    column = kwargs.keys()[0]
-    value = kwargs[column]
-    sql = "SELECT EXISTS(SELECT 1 FROM %s WHERE %s='%s' LIMIT 1)"
-    val = (self.table_name, column, value)
-    self._cursor.execute(sql, val)
-    result = self._cursor.fetch()
-    return result
-
-class ArticleTable(Table):
-  def __init__(self):
-    super().__init__(table_name='articles')
-  
-  def article(self, pii):
-    if not self.is_row_exist(pii=pii):
-      self.insert(pii=pii)
-    return self.select(pii=pii)
-  
-  def is_row_exist(self, **kwargs):
-    return super().is_row_exist()
-
-class AuthorTable(Table):
-  def __init__(self, name):
-    super().__init__(table_name='authors')

@@ -1,5 +1,5 @@
 import re
-from .__init__ import *
+from .__init__ import logging, requests, urlparse, urljoin, parse_qsl, unquote_plus, bs
 logger = logging.getLogger('mainLogger')
 
 class Url():
@@ -45,7 +45,7 @@ class Url():
             self._response = requests.get(self.url, headers=self.headers)
         return self._response
 
-    def _get_filename_from_cd(cd):
+    def _get_filename_from_cd(self, cd):
         """
         Get filename from content-disposition
         """
@@ -115,13 +115,12 @@ class Page(Url, Find):
         self.seen_count = 0
         self.text = ''
         if do_soup:
-            self._soup = self.soup_maker()
+            self._soup = self._soup_maker()
     def __hash__(self):
         return hash(self.url.url_parts[1:3])
 
     #TODO this func should be replaced with find_get wich find an xpath or css path element and get and 
     def get_urls (self, include=[]):
-        self.make_soup()
         res_urls = []
         link_divs = self.soup.find_all('a')
 
@@ -213,12 +212,16 @@ class Article(Page):
         author = Author(name = full_name)
         return author
 
-    @property
-    def authors(self):
+    def _author_from_regex(self, regex):
         # country affiliation regex : #name\":\"country\",\"_\":\"(\w*)\"
         # email regex : \"type\":\"email\",\"href\":\"mailto:([a-z0-9]+[._]?[a-z0-9]+@\w+[.][^\"]*)\"
+        raise NotImplementedError
+
+    @property
+    def authors(self):
         if not self.__getattribute__('_authors'):
             elements = self.soup.select_one('#author-group').find_all('a')
+            email, aff = self._author_from_regex('')
             authors = [self._author_from_tag_a(tag_a) for tag_a in elements]
             self._authors = authors
             logger.debug('[ Article ] authors: %s', self._authors)
