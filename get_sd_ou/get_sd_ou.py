@@ -1,25 +1,11 @@
 import queue
-from re import search
 import threading
-from urllib.parse import parse_qsl, unquote_plus, urljoin, urlparse
+import logging
 
-import requests
-from bs4 import BeautifulSoup as bs
-
-from .__init__ import logging
 from .class_util import Article, Search_page
 from .database_util import insert_article_data
 
 logger = logging.getLogger('mainLogger')
-
-
-def soup_maker (url, headers={}):
-    try:
-        content = requests.get(url, headers=headers).content
-    except requests.exceptions.ConnectionError:
-        raise(requests.exceptions.ConnectionError("[soup_maker] couldn't make a connection"))
-    soup = bs(content, 'html.parser')
-    return soup
 
 def next_year_gen(init_year=2020, year_step=-1):
     """ iterate through all year fron init_year """
@@ -60,7 +46,7 @@ def worker():
                 next_page_gen_obj = next_page_gen(next_year)
 
                 continue
-        article_url = urljoin(base_url , main_queue.get())
+        article_url = main_queue.get()
         article = Article(article_url, headers)
         logger.debug('[ worker ] get data of article | pii : %s', article.pii)
         article_data = article.get_article_data()

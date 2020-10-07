@@ -1,8 +1,6 @@
 import mysql.connector
-try:
-  from .__init__ import logging
-except ImportError:
-  from get_sd_ou.__init__ import logging
+import logging
+
 logger = logging.getLogger('mainLogger')
 
 _database = None
