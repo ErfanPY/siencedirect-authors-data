@@ -1,5 +1,10 @@
 import re
-from .__init__ import logging, requests, urlparse, urljoin, parse_qsl, unquote_plus, bs
+import json
+import logging 
+import requests
+from bs4 import BeautifulSoup as bs
+from urllib.parse import urlparse, urljoin, parse_qsl, unquote_plus
+
 logger = logging.getLogger('mainLogger')
 
 class Url():
@@ -79,7 +84,6 @@ class Find():
         return selected
     
     def select_one(self, selector):
-        raise NotImplementedError
         """
         element = self.soup
         for num, selector_i in enumerate(selector.split('>')):
@@ -91,6 +95,7 @@ class Find():
                 return None
         return element
         """
+        raise NotImplementedError
     
     def get_urls(self, include=[], _debug=False):
         #TODO include list shoud be regex
@@ -160,17 +165,18 @@ class Page(Url, Find):
     def soup(self):
         del self._soup
 
-class Author():
-    def __init__(self, name, email='', mendely='', scopus='', affiliation=''):
-        logger.debug('[ Author ] __init__ | name: %s', name)
-        self.name = name
-        self.email = email
-        self.mendely = mendely
-        self.scopus = scopus
-        self.affiliation = affiliation
+class Author(dict):
+    def __init__(self, first_name, last_name, id='',email='', affiliation='', is_coresponde=False):
+        logger.debug('[ Author ] __init__ | name: %s', first_name + last_name)
+        self['first_name'] = first_name
+        self['last_name'] = last_name
+        self.['id'] = id
+        self.['email'] = email
+        self.['affiliation'] = affiliation
+        self.['is_coresponde'] = is_coresponde
     
     def __str__(self) -> str:
-        return self.name
+        return self.first_name + self.last_name
 
 
 class Article(Page):
@@ -204,26 +210,49 @@ class Article(Page):
             f.write(requests.get(bibtex_url, headers=self.headers))
         return {'bibtex_url':bibtex_url, 'bibtex_path':bibtex_path}
 
-    def _author_from_tag_a(self, tag_a):
-        full_name = ' '.join([i.text for i in tag_a.select('.text')])
-        is_coresponde = (tag_a.select('.icon-person'))
-        has_email = (tag_a.select('.icon-envelope'))
-        #return {'full_name':full_name, 'is_coresponde':is_coresponde, 'has_email':has_email}
-        author = Author(name = full_name)
-        return author
+    def _author_icons(self, tag_a):
+        is_coresponde = bool(tag_a.select('.icon-person'))
+        has_email = bool(tag_a.select('.icon-envelope'))
+        return {'has_email':has_email,'is_coresponde':is_coresponde}
 
-    def _author_from_regex(self, regex):
-        # country affiliation regex : #name\":\"country\",\"_\":\"(\w*)\"
-        # email regex : \"type\":\"email\",\"href\":\"mailto:([a-z0-9]+[._]?[a-z0-9]+@\w+[.][^\"]*)\"
-        raise NotImplementedError
+    def _author_from_json(self):
+        json_element = self.soup.find_all('script', {'type':"application/json"})[0].contents[0]
+        json_data = json.loads(str(json_element))
+
+        authors_res = {}
+        authors_list_json = []
+        authors_groups_list_json =  json_data['authors']['content']
+        authors_groups_list_json = list(filter(lambda dict: dict['#name']=='author-group', authors_groups_list_json))
+        for group in authors_groups_list_json:
+            group_aff = list(filter(lambda dict: dict['#name']=='affiliation', group['$$']))[0]['$$'][0]['_']
+            group_aff_country = group_aff.split(',')[-1].strip()
+            group_authors = list(filter(lambda dict: dict['#name']=='author', group['$$']))
+            [authors_list_json.append((group_author, group_aff_country)) for group_author in group_authors]
+
+        for index, (author_json, affiliation_country) in enumerate(authors_list_json):
+            first_name = author_json['$$'][0]['_']
+            last_name = author_json['$$'][1]['_']
+            email_check = list(filter(lambda dic: dic['#name'] == 'e-address', author_json['$$']))
+            email = None if not email_check else email_check[0]['_']
+            """
+            splited_aff = list(json_data['authors']['affiliations'].items())[0][1]['$$']
+            affiliation_text = list(filter(lambda dic: dic['#name'] == 'textfn', splited_aff))[0]['_']
+            affiliation_country = affiliation_text.split(',')[-1]
+            """
+            authors_res[index] = {'first_name':first_name, 'last_name':last_name, 'email':email, 'affiliation':affiliation_country}
+            
+        return authors_res
 
     @property
     def authors(self):
-        if not self.__getattribute__('_authors'):
+        if not self._authors:
             elements = self.soup.select_one('#author-group').find_all('a')
-            email, aff = self._author_from_regex('')
-            authors = [self._author_from_tag_a(tag_a) for tag_a in elements]
-            self._authors = authors
+            authors_data = self._author_from_json()
+            for index, author_element in enumerate(elements):
+                icons = self._author_icons(author_element)
+                authors_data[index]['is_coresponde'] = icons['is_coresponde']
+            authors_objects = [Author(**author_data) for author_data in authors_data.values()]
+            self._authors = authors_objects
             logger.debug('[ Article ] authors: %s', self._authors)
         return self._authors
 
@@ -243,7 +272,7 @@ class Search_page (Page):
             if article.get('href'):
                 article_link = article.get('href')
                 if 'pii' in article_link and not 'pdf' in article_link:
-                    articles.append(urljoin(self.url_parts.netloc, article_link))
+                    articles.append(urljoin('https://'+self.url_parts.netloc, article_link))
                     logger.debug('[ Search_page ] one article added | year: %s', self.year)
         logger.debug('[ Search_page ] all articels got | year: %s', self.year)
         return articles
