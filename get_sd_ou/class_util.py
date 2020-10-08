@@ -170,13 +170,16 @@ class Author(dict):
         logger.debug('[ Author ] __init__ | name: %s', first_name + last_name)
         self['first_name'] = first_name
         self['last_name'] = last_name
-        self.['id'] = id
-        self.['email'] = email
-        self.['affiliation'] = affiliation
-        self.['is_coresponde'] = is_coresponde
+        self['id'] = id
+        self['email'] = email
+        self['affiliation'] = affiliation
+        self['is_coresponde'] = is_coresponde
     
     def __str__(self) -> str:
         return self.first_name + self.last_name
+    
+    def __getattr__(self, key):
+        return(self[key])
 
 
 class Article(Page):
