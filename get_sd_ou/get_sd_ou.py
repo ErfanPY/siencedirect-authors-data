@@ -50,8 +50,7 @@ def worker():
         article = Article(article_url, headers)
         logger.debug('[ worker ] get data of article | pii : %s', article.pii)
         article_data = article.get_article_data()
-        article_data['authors'] = [author.name for author in article_data['authors']]
-        insert_article_data(*article_data.values())
+        insert_article_data(**article_data.values())
         
         main_queue.task_done()
 
@@ -62,12 +61,8 @@ headers = {
 
 base_url = 'https://www.sciencedirect.com/'
 article_test_url = 'https://www.sciencedirect.com/science/article/pii/S0950423020305763#!'
-article_history = {} 
-author_history = {}
-start_year = 2010
-end_year = 2020
 
-year = '2020'
+year = 2018
 show_per_page = 25
 
 main_queue = None
@@ -107,4 +102,4 @@ def stop_search():
     pass
 if __name__ == "__main__":
     logger.debug('___________________________________________[ Search Start ]________________________________________')
-    start_search(2018)
+    start_search(year)
