@@ -39,10 +39,11 @@ def insert_article(pii, title='', database=None):
   logger.debug('[ database ] article inserted | pii: %s  id: %s', pii, article_id)
   return article_id
 
-def insert_author(name, email='', id='', mendely='', scopus='', affiliation='', database=None):
+def insert_author(first_name, last_name, email='', id='', affiliation='', database=None):
   database  = database if database else init_database()
-  sql = "INSERT INTO authors (name) VALUES (%s)"
-  val = (name, )
+  name = first_name+'|'+last_name
+  sql = "INSERT INTO authors (name, email, id, affiliation) VALUES (%s, %s, %s, %s)"
+  val = (name, email, id, affiliation)
   _cursor.execute(sql, val)
   _database.commit()
   author_id = _cursor.lastrowid
@@ -58,11 +59,11 @@ def connect_article_author(article_id, author_id, is_corresponde=0, database=Non
   _database.commit()
   logger.debug('[ database ] article and author connected | article_id: %s  author_id: %s', article_id, author_id)
 
-def insert_multi_author(authors_name_list, database=None):
+def insert_multi_author(authors_list, database=None):
   database  = database if database else init_database()
   authors_id = []
-  for author_name in authors_name_list :
-    authors_id.append(insert_author(author_name))
+  for author in authors_list :
+    authors_id.append(insert_author(**author))
   return authors_id
 
 def connect_multi_article_authors(article_id, authors_id_list, database=None):
@@ -70,11 +71,11 @@ def connect_multi_article_authors(article_id, authors_id_list, database=None):
   for author_id in authors_id_list :
     connect_article_author(article_id, author_id)
   
-def insert_article_data(pii, authors_name_list, database=None):
+def insert_article_data(pii, authors, database=None, **kwargs):
   database  = database if database else init_database()
   article_id = insert_article(pii=pii)
   
-  authors_id = insert_multi_author(authors_name_list)
+  authors_id = insert_multi_author(authors)
   connect_multi_article_authors(article_id, authors_id)
 
 ### UPDATE

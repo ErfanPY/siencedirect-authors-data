@@ -188,8 +188,9 @@ class Article(Page):
         self.pii = self.get_pii()
         logger.debug('[ Article ] __init__ | pii: %s', self.pii)
         super().__init__(url, *args, **kwargs)
-        self.bibtex = None
-        if do_bibtex: self.bibtex = self.export_bibtex()
+        
+        if do_bibtex: self.export_bibtex()
+
         self._authors = []
 
     def get_pii(self):
@@ -199,19 +200,17 @@ class Article(Page):
         """ this is the main function of article it collect all data we need from an article (needed data is spesified from input) 
         it get authors name and email and affiliation from article and mendely link if exist
         """
-        data = {'pii':self.pii, 'authors':self.authors}
+        data = {'pii':self.pii, 'authors':self.authors, 'bibtex_url':self.bibtex_url}
 
         return data
     
-    def export_bibtex(self, download=False):
-        bibtex_url = Url(f'https://www.sciencedirect.com/sdfe/arp/cite?pii={self.pii}&format=text/x-bibtex&wi')
-
-        if not download : 
-            return {'bibtex_url':bibtex_url}
-        bibtex_path = f'articles/{self.pii}.bib'
-        with open(bibtex_path, 'ab') as f:
-            f.write(requests.get(bibtex_url, headers=self.headers))
-        return {'bibtex_url':bibtex_url, 'bibtex_path':bibtex_path}
+    def export_bibtex(self):
+        self.bibtex_url = Url(f'https://www.sciencedirect.com/sdfe/arp/cite?pii={self.pii}&format=text/x-bibtex&wi')
+        
+        self.bibtex_file_path = f'articles/{self.pii}.bib'
+        with open(self.bibtex_file_path, 'ab') as f:
+            f.write(requests.get(self.bibtex_url, headers=self.headers))
+        return {'bibtex_url':self.bibtex_url, 'bibtex_file_path':self.bibtex_file_path}
 
     def _author_icons(self, tag_a):
         is_coresponde = bool(tag_a.select('.icon-person'))
@@ -254,13 +253,21 @@ class Article(Page):
             for index, author_element in enumerate(elements):
                 icons = self._author_icons(author_element)
                 authors_data[index]['is_coresponde'] = icons['is_coresponde']
+                logger.info('Author got, %s', authors_data[index])
+                
             authors_objects = [Author(**author_data) for author_data in authors_data.values()]
             self._authors = authors_objects
             logger.debug('[ Article ] authors: %s', self._authors)
         return self._authors
 
 class Search_page (Page):
-    def __init__(self, url):
+    def __init__(self, year_or_url, title='', author='', affiliation='', show_per_page='', **kwargs):
+        if type(year_or_url) == str and 'http' in year_or_url :
+            url = year_or_url
+        else :
+
+            url = f'https://www.sciencedirect.com/search?qs={title}&date={year_or_url}&authors={author}&affiliations={affiliation}&show={show_per_page}'
+
         logger.debug('[ Search_page ] __init__ | url: %s', url)
         super().__init__(url)
         self.url = url
@@ -288,7 +295,7 @@ class Search_page (Page):
         next_url = self.soup.select_one('li.next-link > a')
         try:
             href = next_url.get('href')
-            return urljoin(self.url_parts.netloc, href)
+            return Search_page(urljoin(self.url_parts.netloc, href))
         except AttributeError:
             return None
     

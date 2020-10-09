@@ -7,6 +7,9 @@
         <p>
             {{ form.start_year.label }}<br>
             {{ form.start_year }}
+            {% for error in form.start_year.errors %}
+            <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}
         </p>
         <p>
             {{ form.affiliation.label }}<br>

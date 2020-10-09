@@ -19,7 +19,7 @@ LOGGING_CONFIG = {
             'stream': 'ext://sys.stdout',  # Default is stderr
         },
         'file':{
-            'level': 'DEBUG',
+            'level': 'INFO',
             'formatter': 'standard',
             'class': 'logging.FileHandler',
             'filename': 'get_sd_ou/get_sd_ou.log',
