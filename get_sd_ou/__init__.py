@@ -10,6 +10,10 @@ LOGGING_CONFIG = {
         'console_print': { 
             'format': '%(message)s'
         }
+        ,
+        'web_log': { 
+            'format': '%(message)s\n------------------------------------\n'
+        }
     },
     'handlers': { 
         'default': { 

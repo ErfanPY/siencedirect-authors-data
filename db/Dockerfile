@@ -4,6 +4,7 @@ EXPOSE 3306
 
 ENV MYSQL_ROOT_PASSWORD="root"
 
-ADD . /docker-entrypoint-initdb.d/
-VOLUME /docker-entrypoint-initdb.d/
+ADD . /var/lib/mysql/
+RUN chmod 700 /var/lib/mysql/ 
+VOLUME /var/lib/mysql/
 
