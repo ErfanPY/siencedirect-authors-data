@@ -16,5 +16,5 @@ services:
     volumes:
       - db:/var/lib/mysql/:ro
 volumes:
- db_data: {}
+ db:
 
