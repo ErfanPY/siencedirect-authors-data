@@ -21,7 +21,8 @@ def next_page_gen(year, **kwargs):
     search_obj = Search_page(year, **kwargs)
     while True :
         logger.debug('[ main ] [ next_page_gen ] next page | year: %s, page=%s, url: %s', year, page, search_obj.url)
-        yield {'search_page':search_obj, 'page_number':page, 'year':year}
+        res = {'search_page':search_obj, 'page_number':page, 'year':year}
+        yield res
         page += 1
         search_obj = search_obj.next_page()
 
@@ -35,7 +36,7 @@ def worker(**search_kwargs):
 
     while continue_search:
         if main_queue.empty():
-            search_page, page_number, year = next(next_page_gen_obj)
+            search_page, page_number, year = next(next_page_gen_obj).values()
             if search_page:
                 logger.debug('[ worker ] get artciles from year: %s , page: %s', year, page_number)
                 

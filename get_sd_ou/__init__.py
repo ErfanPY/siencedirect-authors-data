@@ -20,7 +20,7 @@ LOGGING_CONFIG = {
         },
         'file':{
             'level': 'INFO',
-            'formatter': 'standard',
+            'formatter': 'console_print',
             'class': 'logging.FileHandler',
             'filename': 'get_sd_ou/get_sd_ou.log',
         }

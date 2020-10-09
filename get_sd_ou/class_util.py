@@ -188,8 +188,9 @@ class Article(Page):
         self.pii = self.get_pii()
         logger.debug('[ Article ] __init__ | pii: %s', self.pii)
         super().__init__(url, *args, **kwargs)
-        
-        if do_bibtex: self.export_bibtex()
+        self.bibtex = None
+        if do_bibtex: 
+            self.bibtex = self.export_bibtex()
 
         self._authors = []
 
@@ -200,7 +201,7 @@ class Article(Page):
         """ this is the main function of article it collect all data we need from an article (needed data is spesified from input) 
         it get authors name and email and affiliation from article and mendely link if exist
         """
-        data = {'pii':self.pii, 'authors':self.authors, 'bibtex_url':self.bibtex_url}
+        data = {'pii':self.pii, 'authors':self.authors, 'bibtex':self.bibtex}
 
         return data
     
