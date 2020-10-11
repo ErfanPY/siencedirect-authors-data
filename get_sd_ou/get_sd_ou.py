@@ -26,7 +26,7 @@ def next_page_gen(year, **kwargs):
         page += 1
         search_obj = search_obj.next_page()
 
-def worker(**search_kwargs):
+def worker(start_year=2020, **search_kwargs):
     global continue_search
     global next_page_gen_obj
     

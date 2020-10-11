@@ -262,12 +262,15 @@ class Article(Page):
         return self._authors
 
 class Search_page (Page):
-    def __init__(self, year_or_url, title='', author='', affiliation='', show_per_page='', **kwargs):
+    def __init__(self, year_or_url, show_per_page='', **kwargs):
         if type(year_or_url) == str and 'http' in year_or_url :
             url = year_or_url
         else :
-
-            url = f'https://www.sciencedirect.com/search?qs={title}&date={year_or_url}&authors={author}&affiliations={affiliation}&show={show_per_page}'
+            #url = f'https://www.sciencedirect.com/search?qs={title}&date={year_or_url}&authors={author}&affiliations={affiliation}&show={show_per_page}'
+            url = f'https://www.sciencedirect.com/search?date={year_or_url}&'
+            for key in kwargs.keys():
+                if kwargs[key]:
+                    urll += key+'='+'{'+kwargs[key]+'}'+'&'
 
         logger.debug('[ Search_page ] __init__ | url: %s', url)
         super().__init__(url)
