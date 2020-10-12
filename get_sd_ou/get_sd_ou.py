@@ -4,8 +4,24 @@ import logging
 
 from .class_util import Article, Search_page
 from .database_util import insert_article_data
+from flask import Flask
+from celery import Celery
 
 logger = logging.getLogger('mainLogger')
+
+app = Flask(__name__)
+app.config['SECRET_KEY'] = 'top top secret!'
+
+app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
+app.config['CELERY_RESULT_BACKEND'] = 'redis://localhost:6379/0'
+app.config['CELERY_IGNORE_RESULT'] = False
+
+celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
+
+celery.conf.update(app.config)
+
+def printer(a):
+    print(a)
 
 def next_year_gen(start_year=2020, year_step=-1, **search_kwargs):
     """ iterate through all year fron start_year """
@@ -26,10 +42,9 @@ def next_page_gen(year, **kwargs):
         page += 1
         search_obj = search_obj.next_page()
 
-def worker(start_year=2020, **search_kwargs):
+def worker(**search_kwargs):
     global continue_search
     global next_page_gen_obj
-    
     year = next(next_year_gen_obj)['year']
     next_page_gen_obj = next_page_gen(year , **search_kwargs)
     continue_search = True
@@ -59,8 +74,8 @@ def worker(start_year=2020, **search_kwargs):
         insert_article_data(**article_data)
         
         main_queue.task_done()
-
-def start_search(start_year=2020, **search_kwargs):
+@celery.task(bind=True)
+def start_search(self, **search_kwargs):
     #global threads
     global main_queue
     global next_year_gen_obj
@@ -69,11 +84,15 @@ def start_search(start_year=2020, **search_kwargs):
     2) Initiate the database connection
     3) Call the worker function of each thread
     """
+    start_year = search_kwargs['start_year']
+    self.update_state(state='PROGRESS',
+                          meta={'current': 1, 'total': 100,
+                                'status': 'in get sd ou'})
     next_year_gen_obj = next_year_gen(start_year=start_year)
     main_queue = queue.Queue()
     #threads = [threading.Thread(target=worker, kwargs=search_kwargs) for _ in range(2)]
     #[thread.start() for thread in threads]
-    worker(start_year = start_year, **search_kwargs)
+    worker(**search_kwargs)
     main_queue.join()
 
 def pause_search():
