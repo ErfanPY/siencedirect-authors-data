@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import queue
 import threading
 import logging
@@ -12,8 +13,8 @@ logger = logging.getLogger('mainLogger')
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'top top secret!'
 
-app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
-app.config['CELERY_RESULT_BACKEND'] = 'redis://localhost:6379/0'
+app.config['CELERY_BROKER_URL'] = 'redis://0.0.0.0:6379/0'
+app.config['CELERY_RESULT_BACKEND'] = 'redis://0.0.0.0:6379/0'
 app.config['CELERY_IGNORE_RESULT'] = False
 
 celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])

@@ -10,20 +10,24 @@ _cursor = None
 def main():
   global _database
   _database = init_database()
-  insert_article_data('123123alibaba', ['Erfan Gh','Abas ali mamad','sogra kobra','gholi moli'])
+  executeScriptsFromFile('/root/Desktop/siencedirect-authors-data/db/scripts/siencedirect.sql', _cursor)
+  _database.commit()
 
 def init_database():
   global _database
   global _cursor
   if not _database:
     _database = mysql.connector.connect(
-      host="db",
+      host="127.0.0.1",
       user="root",
       password="root",
-      port= '3306',
-      database="siencedirect"
+      port= '3306'
     )
   _cursor = _database.cursor()
+  _cursor.execute('SELECT siencedirec;')
+  executeScriptsFromFile('/root/Desktop/siencedirect-authors-data/db/scripts/siencedirect.sql', _cursor)
+  _database.commit()
+
   return _database
 
 ### INSERT
@@ -114,6 +118,25 @@ def get_article_authors(article_id, database=None):
 def get_articles_of_author(sql, val, database=None):
   database  = database if database else init_database()
   _cursor.execute(sql, val)
+
+def executeScriptsFromFile(filename, cursor):
+  # Open and read the file as a single buffer
+  fd = open(filename, 'r')
+  sqlFile = fd.read()
+  fd.close()
+
+  # all SQL commands (split on ';')
+  sqlCommands = sqlFile.split(';')
+  # Execute every command from the input file
+  for command in sqlCommands:
+    # This will skip and report errors
+    # For example, if the tables do not yet exist, this will skip over
+    # the DROP TABLE commands
+    try:
+      if command.rstrip() != '':
+        cursor.execute(command)
+    except ValueError as msg:
+      print ("Command skipped: ", msg)
 
 if __name__ == "__main__":
   main()

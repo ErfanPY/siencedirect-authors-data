@@ -1,3 +1,5 @@
+db/datadir/
+*.swp
 redis-stable*
 tmpt*
 .venv

@@ -5,6 +5,17 @@
         width: 100%;
         text-align: center;
     }
+    .column {
+	float: left;
+	width: 50%;
+    }
+
+    /* Clear floats after the columns */
+    .row:after {
+	content: "";
+	display: table;
+	clear: both;
+    }
 </style>
 <script src="//cdnjs.cloudflare.com/ajax/libs/nanobar/0.2.1/nanobar.min.js"></script>
 <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
@@ -26,29 +37,35 @@
             {% endfor %}
         </p>
         <p>
-            {{ form.term.label }}<br>
-            {{ form.term }}
-            {{ form.pub_title.label }}<br>
-            {{ form.pub_title }}
-            {{ form.authors.label }}<br>
-            {{ form.authors }}
-            {{ form.affiliation.label }}<br>
-            {{ form.affiliation }}
-            {{ form.volume.label }}<br>
-            {{ form.volume }}
-            {{ form.issue.label }}<br>
-            {{ form.issue }}
-            {{ form.page.label }}<br>
-            {{ form.page }}
-            {{ form.keywords.label }}<br>
-            {{ form.keywords }}
-            {{ form.title.label }}<br>
-            {{ form.title }}
-            {{ form.refrence.label }}<br>
-            {{ form.refrence }}
-            {{ form.issn.label }}<br>
-            {{ form.issn }}
-        </p>
+	 <div class="row">
+		 <div class="column">
+		    {{ form.term.label }}<br>
+		    {{ form.term }}<br>
+	            {{ form.pub_title.label }}<br>
+        	    {{ form.pub_title }}<br>
+	            {{ form.authors.label }}<br>
+	            {{ form.authors }}<br>
+        	    {{ form.affiliation.label }}<br>
+	            {{ form.affiliation }}<br>
+	            {{ form.volume.label }}<br>
+        	    {{ form.volume }}<br>
+		    {{ form.issue.label }}<br>
+	            {{ form.issue }}
+		 </div>
+		<div class="column">
+			{{ form.page.label }}<br>
+        	        {{ form.page }}<br>
+	            	{{ form.keywords.label }}<br>
+        	        {{ form.keywords }}<br>
+	                {{ form.title.label }}<br>
+	                {{ form.title }}<br>
+        	        {{ form.refrence.label }}<br>
+     	                {{ form.refrence }}<br>
+        	        {{ form.issn.label }}<br>
+	                {{ form.issn }}
+		</div>
+	 </div> 
+                   </p>
         <p>{{ form.submit() }}</p>
 </form>
 <hr>
@@ -60,7 +77,7 @@
         // add task status elements
         div = $('<div class="progress"><div></div><div>0%</div><div>...</div><div>&nbsp;</div></div><hr>');
         $('#progress').append(div);
-
+        document.getElementById( 'progress' ).scrollIntoView();
         // create a progress bar
         var nanobar = new Nanobar({
             bg: '#44f',

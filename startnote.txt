@@ -1,0 +1,36 @@
+nohup python -u ./test.py > output.log &
+celery -A get_sd_ou.get_sd_ou.celery worker --loglevel=INFO --detach
+docker run -d --name some-redis -p 6379:6379 redis
+
+
+### backup db:
+
+docker exec some-mysql sh -c 'exec mysqldump --all-databases -uroot -p"$MYSQL_ROOT_PASSWORD"' > /some/path/on/your/host/all-databases.sql
+docker exec -i some-mysql sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD"' < /some/path/on/your/host/all-databases.sql
+
+
+#### start with volume:
+
+docker run --name some-mysql -v /my/own/datadir:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=my-secret-pw -d mysql:tag
+docker logs mysql1 2>&1 | grep GENERATED
+docker exec -it mysql1 mysql -uroot -p
+
+
+#### MySQL-server:
+
+## docker pull mysql/mysql-server:latest
+## docker run --name=mysql1 \
+   --mount type=bind,src=/root/Desktop/siencedirect-authors-data/db/my.cnf,dst=/etc/my.cnf \
+   --mount type=bind,src=/root/Desktop/siencedirect-authors-data/db/datadir,dst=/var/lib/mysql \
+   --mount type=bind,src=/root/Desktop/siencedirect-authors-data/db/scripts/,dst=/docker-entrypoint-initdb.d/ \
+   --restart on-failure \
+   -e MYSQL_ROOT_HOST=% \
+   -p 3306:3306 --expose 3306 \
+   -d mysql/mysql-server:latest
+GRANT ALL ON database_name.* TO user_name@'ip_address' IDENTIFIED BY 'user_password';
+
+
+
+## docker exec -it mysql1 mysql -uroot -p
+## mysql> ALTER USER 'root'@'localhost' IDENTIFIED BY 'password';
+## docker start mysql1

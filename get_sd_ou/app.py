@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from flask import (Flask, request, render_template, session, flash,
     redirect, url_for, jsonify)
 
@@ -115,4 +116,4 @@ def taskstatus(task_id):
 
     return jsonify(response)
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host='0.0.0.0', debug=True)
