@@ -10,7 +10,7 @@ _cursor = None
 def main():
   global _database
   _database = init_database()
-  executeScriptsFromFile('/root/Desktop/siencedirect-authors-data/db/scripts/siencedirect.sql', _cursor)
+  executeScriptsFromFile('/root/Desktop/sciencedirect-authors-data/db/scripts/sciencedirect.sql', _cursor)
   _database.commit()
 
 def init_database():
@@ -19,12 +19,12 @@ def init_database():
   if not _database:
     _database = mysql.connector.connect(
       host="localhost",
-      user="siencedirect",
+      user="sciencedirect",
       password="root",
       port= '3306'
     )
   _cursor = _database.cursor()
-  executeScriptsFromFile('/root/Desktop/siencedirect-authors-data/db/scripts/siencedirect.sql', _cursor)
+  executeScriptsFromFile('/root/Desktop/sciencedirect-authors-data/db/scripts/sciencedirect.sql', _cursor)
   _database.commit()
 
   return _database
@@ -34,7 +34,7 @@ def init_database():
 def insert_article(pii, title='', database=None):
   database  = database if database else init_database()
   #update = UPDATE articles SET title=%S
-  sql = "INSERT INTO siencedirect.articles (pii, title) VALUES (%s, %s);"
+  sql = "INSERT INTO sciencedirect.articles (pii, title) VALUES (%s, %s);"
   val = (pii, title)
   _cursor.execute(sql, val)
   _database.commit()
@@ -45,7 +45,7 @@ def insert_article(pii, title='', database=None):
 def insert_author(first_name, last_name, email='', id='', affiliation='', database=None):
   database  = database if database else init_database()
   name = first_name+'|'+last_name
-  sql = "INSERT INTO siencedirect.authors (name, email, id, affiliation) VALUES (%s, %s, %s, %s)"
+  sql = "INSERT INTO sciencedirect.authors (name, email, id, affiliation) VALUES (%s, %s, %s, %s)"
   val = (name, email, id, affiliation)
   _cursor.execute(sql, val)
   _database.commit()
@@ -56,7 +56,7 @@ def insert_author(first_name, last_name, email='', id='', affiliation='', databa
 def connect_article_author(article_id, author_id, is_corresponde=0, database=None):
   database  = database if database else init_database()
   #TODO connect article with pii (get article id from articles from pii)
-  sql = "INSERT INTO siencedirect.article_authors (article_id, author_id, is_corresponde) VALUES (%s, %s, %s);"
+  sql = "INSERT INTO sciencedirect.article_authors (article_id, author_id, is_corresponde) VALUES (%s, %s, %s);"
   val = (article_id, author_id, is_corresponde)
   _cursor.execute(sql, val)
   _database.commit()
