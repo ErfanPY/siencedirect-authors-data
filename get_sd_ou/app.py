@@ -4,7 +4,6 @@ from flask import (Flask, request, render_template, session, flash,
 
 from flask_wtf import FlaskForm
 from wtforms import StringField, IntegerField, SubmitField
-from wtforms.validators import DataRequired
 
 from celery import Celery
 import time
@@ -24,7 +23,7 @@ celery.conf.update(app.config)
 
 
 class StartForm(FlaskForm):
-    start_year = StringField('years', validators=[DataRequired()])
+    start_year = StringField('years')
     term = StringField('Search term')
     pub_title = StringField('in jornal or book title ')
     authors = StringField('authors')
@@ -61,7 +60,7 @@ def longtask():
 
     form = StartForm()
     kwargs = {
-        'start_year':form.start_year.data, 
+        'date':form.start_year.data, 
         'qs':form.term.data,
         'pub':form.pub_title.data,
         'authors':form.authors.data,

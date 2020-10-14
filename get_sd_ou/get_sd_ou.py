@@ -31,14 +31,14 @@ def next_year_gen(start_year=2020, year_step=-1, **search_kwargs):
         yield {'year':current_search_year, 'search_kwrgs':search_kwargs}
         current_search_year += year_step
 
-def next_page_gen(year, **kwargs):
+def next_page_gen(**search_kwargs):
     """ iterate through page of year """
     page = 1
-    logger.debug('[ main ] [ next_page_gen ] __init__ | year: %s, page=%s', year, page)
-    search_obj = Search_page(year, **kwargs)
+    logger.debug('[ main ] [ next_page_gen ] __init__ | page=%s', page)
+    search_obj = Search_page(**search_kwargs)
     while True :
-        logger.debug('[ main ] [ next_page_gen ] next page | year: %s, page=%s, url: %s', year, page, search_obj.url)
-        res = {'search_page':search_obj, 'page_number':page, 'year':year}
+        logger.debug('[ main ] [ next_page_gen ] next page | page=%s, url: %s', page, search_obj.url)
+        res = {'search_page':search_obj, 'page_number':page}
         yield res
         page += 1
         search_obj = search_obj.next_page()
@@ -47,12 +47,13 @@ def worker(**search_kwargs):
     global continue_search
     global next_page_gen_obj
     year = next(next_year_gen_obj)['year']
-    next_page_gen_obj = next_page_gen(year , **search_kwargs)
+    search_kwargs['date'] = year
+    next_page_gen_obj = next_page_gen(**search_kwargs)
     continue_search = True
 
     while continue_search:
         if main_queue.empty():
-            search_page, page_number, year = next(next_page_gen_obj).values()
+            search_page, page_number = next(next_page_gen_obj).values()
             if search_page:
                 logger.debug('[ worker ] get artciles from year: %s , page: %s', year, page_number)
                 
@@ -64,7 +65,8 @@ def worker(**search_kwargs):
                 
                 next_year, search_kwargs = next(next_year_gen_obj)
                 logger.debug('[ worker ] go to next year search: %s', next_year)
-                next_page_gen_obj = next_page_gen(next_year, **search_kwargs)
+                search_kwargs['date'] = next_year
+                next_page_gen_obj = next_page_gen(**search_kwargs)
                 continue
             
         article_url = main_queue.get()
@@ -75,6 +77,16 @@ def worker(**search_kwargs):
         insert_article_data(**article_data)
         
         main_queue.task_done()
+
+def pages_worker(**search_kwargs):
+    page_gen = next_page_gen(**search_kwargs)
+    for page in page_gen:
+        articles = page['search_page'].get_articles()
+        for article_url in articles:
+            data = Article(article_url).get_article_data()
+            insert_article_data(**data)
+
+
 @celery.task(bind=True)
 def start_search(self, **search_kwargs):
     #global threads
@@ -85,10 +97,13 @@ def start_search(self, **search_kwargs):
     2) Initiate the database connection
     3) Call the worker function of each thread
     """
-    start_year = search_kwargs['start_year']
+    start_year = search_kwargs.get('start_year', None)
     self.update_state(state='PROGRESS',
                           meta={'current': 1, 'total': 100,
                                 'status': 'in get sd ou'})
+    if not start_year:
+        pages_worker(**search_kwargs)
+
     next_year_gen_obj = next_year_gen(start_year=start_year)
     main_queue = queue.Queue()
     #threads = [threading.Thread(target=worker, kwargs=search_kwargs) for _ in range(2)]
