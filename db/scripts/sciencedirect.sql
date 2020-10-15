@@ -45,8 +45,7 @@ CREATE TABLE IF NOT EXISTS `authors` (
   `author_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(50) NOT NULL,
   `email` varchar(50) DEFAULT NULL UNIQUE,
-  `scopus` varchar(50) DEFAULT NULL,
-  `mendely` varchar(50) DEFAULT NULL,
+  `scopus` varchar(50) DEFAULT NULL UNIQUE,
   `affiliation` varchar(50) DEFAULT NULL,
   PRIMARY KEY (`author_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=112 DEFAULT CHARSET=utf8mb4;

@@ -45,8 +45,8 @@ def insert_article(pii, title='', database=None):
 def insert_author(first_name, last_name, email='', affiliation='', database=None, is_coresponde=False, id=None):
   database  = database if database else init_database()
   name = first_name+'|'+last_name
-  sql = "INSERT IGNORE INTO sciencedirect.authors (name, email, affiliation) VALUES (%s, %s, %s)"
-  val = (name, email, affiliation)
+  sql = "INSERT IGNORE INTO sciencedirect.authors (name, email, affiliation, scopus) VALUES (%s, %s, %s, %s)"
+  val = (name, email, affiliation, id)
   _cursor.execute(sql, val)
   _database.commit()
   author_id = _cursor.lastrowid

@@ -174,7 +174,18 @@ class Author(dict):
         self['email'] = email
         self['affiliation'] = affiliation
         self['is_coresponde'] = is_coresponde
-    
+        self.get_scopus()
+
+    def get_scopus(self):
+        scopus_search = 'https://www.scopus.com/results/authorNamesList.uri?sort=count-f&src=al&sid=9d5d4784ba0ec31261499d113b0fc914&sot=al&sdt=al&sl=52&s=AUTHLASTNAME%28EQUALS%28{0}%29%29+AND+AUTHFIRST%28{1}%29&st1={0}&st2={1}&orcidId=&selectionPageSearch=anl&reselectAuthor=false&activeFlag=true&showDocument=false&resultsPerPage=20&offset=1&jtp=false&currentPage=1&previousSelectionCount=0&tooManySelections=false&previousResultCount=0&authSubject=LFSC&authSubject=HLSC&authSubject=PHSC&authSubject=SOSC&exactAuthorSearch=true&showFullList=false&authorPreferredName=&origin=searchauthorfreelookup&affiliationId=&txGid=2902d9dc14a46e0e513784d44e52bc5d'
+        scopus_url = Page(scopus_search.format(self['last_name'], self['first_name']))
+        inputs = scopus_url.soup.findall('input', {'id':re.compile('auid_.*')})
+        if not inputs :
+            self['id'] = ''
+            return None
+        self['id'] = inputs[0].get('value')
+        return f"https://www.scopus.com/authid/detail.uri?authorId={self['id']}"
+
     def __str__(self) -> str:
         return self.first_name + self.last_name
     
@@ -199,7 +210,7 @@ class Article(Page):
 
     def get_article_data(self, *needed_data):
         """ this is the main function of article it collect all data we need from an article (needed data is spesified from input) 
-        it get authors name and email and affiliation from article and mendely link if exist
+        it get authors name and email and affiliation from article 
         """
         data = {'pii':self.pii, 'authors':self.authors, 'bibtex':self.bibtex}
 
