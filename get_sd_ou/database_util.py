@@ -10,7 +10,7 @@ _cursor = None
 def main():
   global _database
   _database = init_database()
-  executeScriptsFromFile('/root/Desktop/sciencedirect-authors-data/db/scripts/sciencedirect.sql', _cursor)
+  executeScriptsFromFile('/root/dev/sciencedirect-authors-data/db/scripts/sciencedirect.sql', _cursor)
   _database.commit()
 
 def init_database():
@@ -24,7 +24,7 @@ def init_database():
       port= '3306'
     )
   _cursor = _database.cursor()
-  executeScriptsFromFile('/root/Desktop/sciencedirect-authors-data/db/scripts/sciencedirect.sql', _cursor)
+  executeScriptsFromFile('/root/dev/sciencedirect-authors-data/db/scripts/sciencedirect.sql', _cursor)
   _database.commit()
 
   return _database
@@ -42,11 +42,11 @@ def insert_article(pii, title='', database=None):
   logger.debug('[ database ] article inserted | pii: %s  id: %s', pii, article_id)
   return article_id
 
-def insert_author(first_name, last_name, email='', id='', affiliation='', database=None):
+def insert_author(first_name, last_name, email='', affiliation='', database=None, is_coresponde=False, id=None):
   database  = database if database else init_database()
   name = first_name+'|'+last_name
-  sql = "INSERT INTO sciencedirect.authors (name, email, id, affiliation) VALUES (%s, %s, %s, %s)"
-  val = (name, email, id, affiliation)
+  sql = "INSERT INTO sciencedirect.authors (name, email, affiliation) VALUES (%s, %s, %s)"
+  val = (name, email, affiliation)
   _cursor.execute(sql, val)
   _database.commit()
   author_id = _cursor.lastrowid

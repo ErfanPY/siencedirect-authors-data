@@ -12,11 +12,11 @@
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 
 
--- Dumping database structure for siencedirect
-CREATE DATABASE IF NOT EXISTS `siencedirect` /*!40100 DEFAULT CHARACTER SET utf8mb4 */;
-USE `siencedirect`;
+-- Dumping database structure for sciencedirect
+CREATE DATABASE IF NOT EXISTS `sciencedirect` /*!40100 DEFAULT CHARACTER SET utf8mb4 */;
+USE `sciencedirect`;
 
--- Dumping structure for table siencedirect.articles
+-- Dumping structure for table sciencedirect.articles
 CREATE TABLE IF NOT EXISTS `articles` (
   `article_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `pii` varchar(20) NOT NULL,
@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS `articles` (
 
 -- Data exporting was unselected.
 
--- Dumping structure for table siencedirect.article_authors
+-- Dumping structure for table sciencedirect.article_authors
 CREATE TABLE IF NOT EXISTS `article_authors` (
   `article_id` int(10) unsigned NOT NULL,
   `author_id` int(10) unsigned NOT NULL,
@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS `article_authors` (
 
 -- Data exporting was unselected.
 
--- Dumping structure for table siencedirect.authors
+-- Dumping structure for table sciencedirect.authors
 CREATE TABLE IF NOT EXISTS `authors` (
   `author_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(50) NOT NULL,

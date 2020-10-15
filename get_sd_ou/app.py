@@ -7,9 +7,10 @@ from wtforms import StringField, IntegerField, SubmitField
 
 from celery import Celery
 import time
-
+import logging
 from get_sd_ou import get_sd_ou
-
+logger = logging.getLogger('mainLogger')
+logger.debug('[app] INIT')
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'top top secret!'
 
@@ -59,6 +60,7 @@ def search_task(self, **search_kwargs):
 def longtask():
 
     form = StartForm()
+    logger.debug('[app] starting task')
     kwargs = {
         'date':form.start_year.data, 
         'qs':form.term.data,

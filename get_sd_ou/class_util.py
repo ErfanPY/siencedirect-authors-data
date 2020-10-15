@@ -219,6 +219,7 @@ class Article(Page):
         return {'has_email':has_email,'is_coresponde':is_coresponde}
 
     def _author_from_json(self):
+        logger.debug('[class] [Article] getting authors from json')
         json_element = self.soup.find_all('script', {'type':"application/json"})[0].contents[0]
         json_data = json.loads(str(json_element))
 
@@ -248,6 +249,7 @@ class Article(Page):
 
     @property
     def authors(self):
+        logger.debug('[class] [Article] getting authors')
         if not self._authors:
             elements = self.soup.select_one('#author-group').find_all('a')
             authors_data = self._author_from_json()
@@ -262,22 +264,22 @@ class Article(Page):
         return self._authors
 
 class Search_page (Page):
-    def __init__(self, url='', show_per_page=None, **search_kwargs):
+    def __init__(self, url='', show_per_page=100, **search_kwargs):
         if not url :
             #url = f'https://www.sciencedirect.com/search?qs={title}&date={url}&authors={author}&affiliations={affiliation}&show={show_per_page}'
             url = 'https://www.sciencedirect.com/search?'
             for key in search_kwargs.keys():
                 if search_kwargs[key]:
                     url += '{}={}&'.format(key, search_kwargs[key])
+            url += 'show={}&'.format(show_per_page)
             print(url)
         logger.debug('[ Search_page ] __init__ | url: %s', url)
         super().__init__(url)
         self.url = url
         self.query = dict(self.url_parts.query)
-        self.year = self.query['date']
     
     def get_articles(self):
-        logger.debug('[ Search_page ] getting articles | year: %s', self.year)
+        logger.debug('[ Search_page ] getting articles | year: %s')
         search_result = self.soup.find_all('a')
         articles = []
         for article in search_result :
@@ -285,8 +287,8 @@ class Search_page (Page):
                 article_link = article.get('href')
                 if 'pii' in article_link and not 'pdf' in article_link:
                     articles.append(urljoin('https://'+self.url_parts.netloc, article_link))
-                    logger.debug('[ Search_page ] one article added | year: %s', self.year)
-        logger.debug('[ Search_page ] all articels got | year: %s', self.year)
+                    logger.debug('[ Search_page ] one article added | year: %s')
+        logger.debug('[ Search_page ] all articels got | year: %s')
         return articles
     
     @property
@@ -297,34 +299,9 @@ class Search_page (Page):
         next_url = self.soup.select_one('li.next-link > a')
         try:
             href = next_url.get('href')
-            return Search_page(urljoin(self.url_parts.netloc, href))
+            return Search_page(urljoin('https://'+self.url_parts.netloc, href))
         except AttributeError:
             return None
     
     def export_bibtex(self, file):
         raise NotImplementedError
-
-class Seen_table():
-    #TODO conflict betwine checking hash of page instance to check sameness
-    def __init__(self):
-        self.hash_table = {}
-    def add_url(self, url):
-        print('[ seen_table ] (add_url)')
-        if self.is_in(url):
-            return 'Already in'
-        
-        if not isinstance(url, Page):
-            url = Page(url)
-            
-        self.hash_table[hash(url)] = url
-        return "OK"
-        
-    def get_page(self, hash_url):
-        return self.hash_table[hash_url]
-        
-    def is_in(self, url):
-        print('[ Seen_table ] (is_in)')
-        if not isinstance(url, Page):
-            url = Page(url)
-        #print(f'(Seen_table) [in_in] <{hash(url) in self.hash_table.keys()}> {url.url}')
-        return hash(url) in self.hash_table.keys()
