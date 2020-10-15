@@ -34,7 +34,7 @@ def init_database():
 def insert_article(pii, title='', database=None):
   database  = database if database else init_database()
   #update = UPDATE articles SET title=%S
-  sql = "INSERT INTO sciencedirect.articles (pii, title) VALUES (%s, %s);"
+  sql = "INSERT IGNORE INTO sciencedirect.articles (pii, title) VALUES (%s, %s);"
   val = (pii, title)
   _cursor.execute(sql, val)
   _database.commit()
@@ -45,7 +45,7 @@ def insert_article(pii, title='', database=None):
 def insert_author(first_name, last_name, email='', affiliation='', database=None, is_coresponde=False, id=None):
   database  = database if database else init_database()
   name = first_name+'|'+last_name
-  sql = "INSERT INTO sciencedirect.authors (name, email, affiliation) VALUES (%s, %s, %s)"
+  sql = "INSERT IGNORE INTO sciencedirect.authors (name, email, affiliation) VALUES (%s, %s, %s)"
   val = (name, email, affiliation)
   _cursor.execute(sql, val)
   _database.commit()
@@ -56,7 +56,7 @@ def insert_author(first_name, last_name, email='', affiliation='', database=None
 def connect_article_author(article_id, author_id, is_corresponde=0, database=None):
   database  = database if database else init_database()
   #TODO connect article with pii (get article id from articles from pii)
-  sql = "INSERT INTO sciencedirect.article_authors (article_id, author_id, is_corresponde) VALUES (%s, %s, %s);"
+  sql = "INSERT IGNORE INTO sciencedirect.article_authors (article_id, author_id, is_corresponde) VALUES (%s, %s, %s);"
   val = (article_id, author_id, is_corresponde)
   _cursor.execute(sql, val)
   _database.commit()
