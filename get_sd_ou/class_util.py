@@ -179,11 +179,9 @@ class Author(dict):
     def get_scopus(self):
         scopus_search = 'https://www.scopus.com/results/authorNamesList.uri?sort=count-f&src=al&sid=9d5d4784ba0ec31261499d113b0fc914&sot=al&sdt=al&sl=52&s=AUTHLASTNAME%28EQUALS%28{0}%29%29+AND+AUTHFIRST%28{1}%29&st1={0}&st2={1}&orcidId=&selectionPageSearch=anl&reselectAuthor=false&activeFlag=true&showDocument=false&resultsPerPage=20&offset=1&jtp=false&currentPage=1&previousSelectionCount=0&tooManySelections=false&previousResultCount=0&authSubject=LFSC&authSubject=HLSC&authSubject=PHSC&authSubject=SOSC&exactAuthorSearch=true&showFullList=false&authorPreferredName=&origin=searchauthorfreelookup&affiliationId=&txGid=2902d9dc14a46e0e513784d44e52bc5d'
         scopus_url = Page(scopus_search.format(self['last_name'], self['first_name']))
-        inputs = scopus_url.soup.findall('input', {'id':re.compile('auid_.*')})
-        if not inputs :
-            self['id'] = ''
-            return None
-        self['id'] = inputs[0].get('value')
+        inputs = scopus_url.soup.find('input', {'id':re.compile('auid_.*')})
+        if not inputs : return None
+        self['id'] = inputs.get('value')
         return f"https://www.scopus.com/authid/detail.uri?authorId={self['id']}"
 
     def __str__(self) -> str:
