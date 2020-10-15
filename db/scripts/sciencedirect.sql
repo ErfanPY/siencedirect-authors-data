@@ -19,7 +19,7 @@ USE `sciencedirect`;
 -- Dumping structure for table sciencedirect.articles
 CREATE TABLE IF NOT EXISTS `articles` (
   `article_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `pii` varchar(20) NOT NULL,
+  `pii` varchar(20) NOT NULL UNIQUE,
   `title` text DEFAULT NULL,
   PRIMARY KEY (`article_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=60 DEFAULT CHARSET=utf8mb4;
@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS `article_authors` (
 CREATE TABLE IF NOT EXISTS `authors` (
   `author_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(50) NOT NULL,
-  `email` varchar(50) DEFAULT NULL,
+  `email` varchar(50) DEFAULT NULL UNIQUE,
   `scopus` varchar(50) DEFAULT NULL,
   `mendely` varchar(50) DEFAULT NULL,
   `affiliation` varchar(50) DEFAULT NULL,
