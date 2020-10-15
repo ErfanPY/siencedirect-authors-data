@@ -20,12 +20,12 @@ docker exec -it mysql1 mysql -uroot -p
 
 ## docker pull mysql/mysql-server:latest
 ## docker run --name=mysql1 \
-   --mount type=bind,src=/root/Desktop/siencedirect-authors-data/db/my.cnf,dst=/etc/my.cnf \
-   --mount type=bind,src=/root/Desktop/siencedirect-authors-data/db/datadir,dst=/var/lib/mysql \
-   --mount type=bind,src=/root/Desktop/siencedirect-authors-data/db/scripts/,dst=/docker-entrypoint-initdb.d/ \
+   --mount type=bind,src=/home/erfan-gh/dev/sciencedirect/sciencedirect-authors-data/db/my.cnf,dst=/etc/my.cnf \
+   --mount type=bind,src=/home/erfan-gh/dev/sciencedirect/sciencedirect-authors-data/db/datadir,dst=/var/lib/mysql \
+   --mount type=bind,src=/home/erfan-gh/dev/sciencedirect/sciencedirect-authors-data/db/scripts/,dst=/docker-entrypoint-initdb.d/ \
    --restart on-failure \
    -e MYSQL_ROOT_HOST=% \
-   -p 3306:3306 --expose 3306 \
+   -p 3306:3306 \
    -d mysql/mysql-server:latest
 GRANT ALL ON database_name.* TO user_name@'ip_address' IDENTIFIED BY 'user_password';
 

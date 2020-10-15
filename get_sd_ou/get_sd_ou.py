@@ -109,7 +109,7 @@ def start_search(self, **search_kwargs):
         continue_search = True
         main_queue = queue.Queue()
         logger.debug('[main] [start_search] no year')
-        while True:
+        while continue_search:
             if main_queue.empty():
                 search_page, page_number = next(next_page_gen_obj).values()
                 if search_page:
@@ -149,7 +149,7 @@ def start_search(self, **search_kwargs):
     next_page_gen_obj = next_page_gen(**search_kwargs)
     continue_search = True
     main_queue = queue.Queue()
-    while True:
+    while continue_search:
         if main_queue.empty():
             search_page, page_number = next(next_page_gen_obj).values()
             if search_page:

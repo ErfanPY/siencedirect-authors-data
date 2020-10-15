@@ -227,11 +227,20 @@ class Article(Page):
         authors_list_json = []
         authors_groups_list_json =  json_data['authors']['content']
         authors_groups_list_json = list(filter(lambda dict: dict['#name']=='author-group', authors_groups_list_json))
-        for group in authors_groups_list_json:
-            group_aff = list(filter(lambda dict: dict['#name']=='affiliation', group['$$']))[0]['$$'][0]['_']
-            group_aff_country = group_aff.split(',')[-1].strip()
-            group_authors = list(filter(lambda dict: dict['#name']=='author', group['$$']))
-            [authors_list_json.append((group_author, group_aff_country)) for group_author in group_authors]
+        
+        try:
+            for group in authors_groups_list_json:#in authors maybe some group which devides authors
+                group_aff = list(filter(lambda dict: dict['#name']=='affiliation', group['$$']))[0]['$$'][0]['_']
+                group_aff_country = group_aff.split(',')[-1].strip()
+                group_authors = list(filter(lambda dict: dict['#name']=='author', group['$$']))
+                [authors_list_json.append((group_author, group_aff_country)) for group_author in group_authors]
+        except IndexError:
+            bio_list = json_data['biographies']['content']
+            group_aff_country = [bio['$$'][0]['$$'][1]['_'].split(',')[-1] for bio in bio_list]
+            for group in authors_groups_list_json:#in authors maybe some group which devides authors
+                group_authors = list(filter(lambda dict: dict['#name']=='author', group['$$']))
+                [authors_list_json.append((group_author, group_aff_country)) for group_author in group_authors]
+            
 
         for index, (author_json, affiliation_country) in enumerate(authors_list_json):
             first_name = author_json['$$'][0]['_']
