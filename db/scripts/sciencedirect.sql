@@ -26,6 +26,18 @@ CREATE TABLE IF NOT EXISTS `articles` (
 
 -- Data exporting was unselected.
 
+-- Dumping structure for table sciencedirect.authors
+CREATE TABLE IF NOT EXISTS `authors` (
+  `author_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(50) NOT NULL,
+  `email` varchar(50) DEFAULT NULL UNIQUE,
+  `scopus` varchar(50) DEFAULT NULL UNIQUE,
+  `affiliation` varchar(50) DEFAULT NULL,
+  PRIMARY KEY (`author_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=112 DEFAULT CHARSET=utf8mb4;
+
+-- Data exporting was unselected.
+
 -- Dumping structure for table sciencedirect.article_authors
 CREATE TABLE IF NOT EXISTS `article_authors` (
   `article_id` int(10) unsigned NOT NULL,
@@ -41,16 +53,39 @@ CREATE TABLE IF NOT EXISTS `article_authors` (
 -- Data exporting was unselected.
 
 -- Dumping structure for table sciencedirect.authors
-CREATE TABLE IF NOT EXISTS `authors` (
-  `author_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(50) NOT NULL,
-  `email` varchar(50) DEFAULT NULL UNIQUE,
-  `scopus` varchar(50) DEFAULT NULL UNIQUE,
+CREATE TABLE IF NOT EXISTS `searchs` (
+  `search_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `date` varchar(50) DEFAULT NULL,
+  `qs` varchar(50) DEFAULT NULL,
+  `pub` varchar(50) DEFAULT NULL,
+  `authors` varchar(50) DEFAULT NULL,
   `affiliation` varchar(50) DEFAULT NULL,
-  PRIMARY KEY (`author_id`)
+  `volume` varchar(50) DEFAULT NULL,
+  `issue` varchar(50) DEFAULT NULL,
+  `page` varchar(50) DEFAULT NULL,
+  `tak` varchar(50) DEFAULT NULL,
+  `title` varchar(50) DEFAULT NULL,
+  `refrences` varchar(50) DEFAULT NULL,
+  `docId` varchar(50) DEFAULT NULL,
+  PRIMARY KEY (`search_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=112 DEFAULT CHARSET=utf8mb4;
 
 -- Data exporting was unselected.
+
+-- Dumping structure for table sciencedirect.article_authors
+CREATE TABLE IF NOT EXISTS `search_articles` (
+  `search_id` int(10) unsigned NOT NULL,
+  `article_id` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`search_id`,`article_id`),
+  KEY `search_id` (`search_id`),
+  KEY `article_id` (`article_id`),
+  CONSTRAINT `FK_search_articles_searchs` FOREIGN KEY (`search_id`) REFERENCES `searchs` (`search_id`),
+  CONSTRAINT `FK_search_articles_articles` FOREIGN KEY (`article_id`) REFERENCES `articles` (`article_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Data exporting was unselected.
+
+
 
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
 /*!40014 SET FOREIGN_KEY_CHECKS=IF(@OLD_FOREIGN_KEY_CHECKS IS NULL, 1, @OLD_FOREIGN_KEY_CHECKS) */;

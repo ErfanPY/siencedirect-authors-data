@@ -62,6 +62,12 @@ def connect_article_author(article_id, author_id, is_corresponde=0, database=Non
   _database.commit()
   logger.debug('[ database ] article and author connected | article_id: %s  author_id: %s', article_id, author_id)
 
+def insert_search ():
+  raise NotImplementedError
+
+def connect_search_article ():
+  raise NotImplementedError
+
 def insert_multi_author(authors_list, database=None):
   database  = database if database else init_database()
   authors_id = []
