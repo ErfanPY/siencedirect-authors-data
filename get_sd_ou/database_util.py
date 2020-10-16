@@ -108,11 +108,11 @@ def is_row_exist(table, column, value):
 
 
 def get_id_less_authors():
-    sql = "SELECT author_id, name, email, scopus, affiliation FROM sciencedirect.authors WHERE scopus = NULL"
+    sql = "SELECT name FROM sciencedirect.authors WHERE scopus is NULL"
     database.cursor.execute(sql)
-    authors = database.cursor.fetchall()
+    names = database.cursor.fetchall()
     res = []
-    for author in authors:
+    for name in names:
         last, first = name.split('|')
         res.append({'last_name': last, 'first_name': first})
     return res

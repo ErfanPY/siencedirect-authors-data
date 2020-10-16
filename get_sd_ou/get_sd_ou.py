@@ -98,11 +98,10 @@ def pages_worker(**search_kwargs):
 
 @celery.task(bind=True)
 def scopus_finder(self):
-    authors = get_id_less_authors()
-    for author in authors:
-        author = Author(**author, do_scopus=True)
-        update_author_scopus(
-            name=author['name'], scopus_id=author['id'])
+    names = get_id_less_authors()
+    for name in names:
+        author = Author(**name, do_scopus=True)
+        update_author_scopus(name=author['name'], id=author['id'])
 
 
 @celery.task(bind=True)
