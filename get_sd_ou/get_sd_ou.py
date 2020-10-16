@@ -96,15 +96,15 @@ def pages_worker(**search_kwargs):
             insert_article_data(**data)
 
 
-@celery.task(bind=True)
-def scopus_finder(self):
+@celery.task(bind=True, name='scopus_search')
+def scopus_search(self):
     names = get_id_less_authors()
     for name in names:
         author = Author(**name, do_scopus=True)
         update_author_scopus(name=author['name'], id=author['id'])
 
 
-@celery.task(bind=True)
+@celery.task(bind=True, name='start_search')
 def start_search(self, **search_kwargs):
     #global threads
     global main_queue

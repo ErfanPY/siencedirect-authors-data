@@ -70,6 +70,8 @@
 </form>
 <hr>
 <h2>Search process statue</h2>
+<input type="button" value="start_scopus_btn" id='start_scopus_btn'>
+<div id="scopus_search_progress"></div>
 <div id="progress"></div>
 <script>
     
@@ -97,6 +99,35 @@
             error: function() {
                 alert('Unexpected error');
             }
+        });
+    }
+
+    function start_scopus() {
+        // send ajax POST request to start background job
+        console.log(form.serialize())
+        $.ajax({
+            type: 'POST',
+            url: '/scopus_search',
+            success: function(data, status, request) {
+                status_url = request.getResponseHeader('Location');
+                update_scopus_progress(status_url);
+            },
+            error: function() {
+                alert('Unexpected error');
+            }
+        });
+    }
+
+    $("#start_scopus_btn").click(start_scopus());
+    
+    function update_scopus_progress(status_url) {
+        // send GET request to status URL
+        
+        $.getJSON(status_url, function(data) {
+            $('#scopus_search_progress').text(data['status']);
+                setTimeout(function() {
+                    update_scopus_progress(status_url);
+                }, 2000);
         });
     }
 
