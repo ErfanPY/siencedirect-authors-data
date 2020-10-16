@@ -68,9 +68,10 @@
                    </p>
         <p>{{ form.submit() }}</p>
 </form>
+<input type="button" value="Start scopus" id='start_scopus_btn' onclick="start_scopus()">
 <hr>
 <h2>Search process statue</h2>
-<input type="button" value="start_scopus_btn" id='start_scopus_btn'>
+
 <div id="scopus_search_progress"></div>
 <div id="progress"></div>
 <script>
@@ -117,8 +118,6 @@
             }
         });
     }
-
-    $("#start_scopus_btn").click(start_scopus());
     
     function update_scopus_progress(status_url) {
         // send GET request to status URL
