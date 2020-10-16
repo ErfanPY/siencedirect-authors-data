@@ -11,8 +11,7 @@ database = mysql.connector.connect(
     port='3306'
 )
 
-executeScriptsFromFile(
-    '/root/dev/sciencedirect-authors-data/db/scripts/sciencedirect.sql', database.cursor)
+#executeScriptsFromFile('/root/dev/sciencedirect-authors-data/db/scripts/sciencedirect.sql', database.cursor)
 database.commit()
 
 # INSERT
