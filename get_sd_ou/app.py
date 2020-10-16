@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from flask import (Flask, request, render_template, session, flash,
-    redirect, url_for, jsonify)
+                   redirect, url_for, jsonify)
 
 from flask_wtf import FlaskForm
 from wtforms import StringField, IntegerField, SubmitField
@@ -37,24 +37,7 @@ class StartForm(FlaskForm):
     refrence = StringField('refrences')
     issn = StringField('ISSN or ISBN')
     submit = SubmitField('Start')
-    
-@celery.task(bind=True)
-def search_task(self, **search_kwargs):
-    #TODO this celery decorated function should be inside get_sd_ou and import it here to be called when start clicked on web page
-    #
-    #
-    #    IMPORTANT IMPLIMENTATION IN GET_SD_OU.get_sd_ou for celey self.update
-    #  
-    #
-    #
-    for i in range(100):
-        message = f'{i}'
-        self.update_state(state='PROGRESS',
-                          meta={'current': i, 'total': 100,
-                                'status': message})
-        time.sleep(1)
-    return {'current': 100, 'total': 100, 'status': 'Task completed!',
-            'result': 42}
+
 
 @app.route('/longtask', methods=['POST'])
 def longtask():
@@ -62,32 +45,34 @@ def longtask():
     form = StartForm()
     logger.debug('[app] starting task')
     kwargs = {
-        'date':form.start_year.data, 
-        'qs':form.term.data,
-        'pub':form.pub_title.data,
-        'authors':form.authors.data,
-        'affiliations':form.affiliation.data,
-        'volume':form.volume.data,
-        'issue':form.issue.data,
-        'page':form.page.data,
-        'tak':form.keywords.data,
-        'title':form.title.data,
-        'refrences':form.refrence.data,
-        'docId':form.issn.data
+        'date': form.start_year.data,
+        'qs': form.term.data,
+        'pub': form.pub_title.data,
+        'authors': form.authors.data,
+        'affiliations': form.affiliation.data,
+        'volume': form.volume.data,
+        'issue': form.issue.data,
+        'page': form.page.data,
+        'tak': form.keywords.data,
+        'title': form.title.data,
+        'refrences': form.refrence.data,
+        'docId': form.issn.data
     }
     task = get_sd_ou.start_search.apply_async(kwargs=kwargs)
     print(kwargs)
     return jsonify({}), 202, {'Location': url_for('taskstatus',
                                                   task_id=task.id)}
 
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     form = StartForm()
     return render_template('index.html', form=form)
-    
+
+
 @app.route('/taskstatus/<task_id>')
 def taskstatus(task_id):
-    task = search_task.AsyncResult(task_id)
+    task = get_sd_ou.start_search.AsyncResult(task_id)
 
     if task.state == 'PENDING':
         response = {
@@ -114,7 +99,8 @@ def taskstatus(task_id):
             'status': str(task.info),  # this is the exception raised
         }
 
-
     return jsonify(response)
+
+
 if __name__ == "__main__":
     app.run(host='0.0.0.0', debug=True)

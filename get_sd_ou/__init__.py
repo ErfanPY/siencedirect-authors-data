@@ -1,41 +1,40 @@
 from logging.config import dictConfig
 
-LOGGING_CONFIG = { 
+LOGGING_CONFIG = {
     'version': 1,
     'disable_existing_loggers': True,
-    'formatters': { 
-        'standard': { 
+    'formatters': {
+        'standard': {
             'format': '%(asctime)s [%(levelname)s] [%(threadName)s:%(thread)d] : %(message)s',
         },
-        'console_print': { 
+        'console_print': {
             'format': '%(message)s'
-        }
-        ,
-        'web_log': { 
+        },
+        'web_log': {
             'format': '%(message)s\n------------------------------------\n'
         }
     },
-    'handlers': { 
-        'default': { 
+    'handlers': {
+        'default': {
             'level': 'DEBUG',
             'formatter': 'console_print',
             'class': 'logging.StreamHandler',
             'stream': 'ext://sys.stdout',  # Default is stderr
         },
-        'file':{
+        'file': {
             'level': 'INFO',
             'formatter': 'console_print',
             'class': 'logging.FileHandler',
             'filename': 'get_sd_ou/get_sd_ou.log',
         }
     },
-    'loggers': { 
+    'loggers': {
         '': {  # root logger
             'handlers': ['default'],
             'level': 'WARNING',
             'propagate': False
         },
-        'mainLogger': { 
+        'mainLogger': {
             'handlers': ['default', 'file'],
             'level': 'DEBUG',
             'propagate': False
@@ -45,7 +44,7 @@ LOGGING_CONFIG = {
             'level': 'DEBUG',
             'propagate': False
         },
-    } 
+    }
 }
 
 dictConfig(LOGGING_CONFIG)
