@@ -3,72 +3,53 @@ import logging
 
 logger = logging.getLogger('mainLogger')
 
-_database = None
-_cursor = None
-# database.article.insert = database.tables.article.insert
 
+database = mysql.connector.connect(
+    host="localhost",
+    user="sciencedirect",
+    password="root",
+    port='3306'
+)
 
-def main():
-    global _database
-    _database = init_database()
-    executeScriptsFromFile(
-        '/root/dev/sciencedirect-authors-data/db/scripts/sciencedirect.sql', _cursor)
-    _database.commit()
-
-
-def init_database():
-    global _database
-    global _cursor
-    if not _database:
-        _database = mysql.connector.connect(
-            host="localhost",
-            user="sciencedirect",
-            password="root",
-            port='3306'
-        )
-    _cursor = _database.cursor()
-    executeScriptsFromFile(
-        '/root/dev/sciencedirect-authors-data/db/scripts/sciencedirect.sql', _cursor)
-    _database.commit()
-
-    return _database
+executeScriptsFromFile(
+    '/root/dev/sciencedirect-authors-data/db/scripts/sciencedirect.sql', database.cursor)
+database.commit()
 
 # INSERT
 
 
-def insert_article(pii, title='', database=None):
-    database = database if database else init_database()
+def insert_article(pii, title=''):
     # update = UPDATE articles SET title=%S
     sql = "INSERT IGNORE INTO sciencedirect.articles (pii, title) VALUES (%s, %s);"
     val = (pii, title)
-    _cursor.execute(sql, val)
-    _database.commit()
-    article_id = _cursor.lastrowid
+    database.cursor.execute(sql, val)
+    database.commit()
+    article_id = database.cursor.lastrowid
     logger.debug(
         '[ database ] article inserted | pii: %s  id: %s', pii, article_id)
     return article_id
 
 
-def insert_author(first_name, last_name, email='', affiliation='', database=None, is_coresponde=False, id=None):
-    database = database if database else init_database()
-    name = first_name+'|'+last_name
-    sql = "INSERT IGNORE INTO sciencedirect.authors (name, email, affiliation, scopus) VALUES (%s, %s, %s, %s)"
+def insert_author(first_name, last_name, email='', affiliation='', is_coresponde=False, id=None):
+    name = last_name+'|'+first_name
+    sql = "INSERT IGNORE INTO sciencedirect.authors (name, email, affiliation, scopus) \
+            VALUES (%s, %s, %s, %s)"
+
     val = (name, email, affiliation, id)
-    _cursor.execute(sql, val)
-    _database.commit()
-    author_id = _cursor.lastrowid
+    database.cursor.execute(sql, val)
+    database.commit()
+    author_id = database.cursor.lastrowid
     logger.debug(
         '[ database ] author inserted | name: %s  id: %s', name, author_id)
     return author_id
 
 
-def connect_article_author(article_id, author_id, is_corresponde=0, database=None):
-    database = database if database else init_database()
+def connect_article_author(article_id, author_id, is_corresponde=0):
     # TODO connect article with pii (get article id from articles from pii)
     sql = "INSERT IGNORE INTO sciencedirect.article_authors (article_id, author_id, is_corresponde) VALUES (%s, %s, %s);"
     val = (article_id, author_id, is_corresponde)
-    _cursor.execute(sql, val)
-    _database.commit()
+    database.cursor.execute(sql, val)
+    database.commit()
     logger.debug(
         '[ database ] article and author connected | article_id: %s  author_id: %s', article_id, author_id)
 
@@ -81,22 +62,19 @@ def connect_search_article():
     raise NotImplementedError
 
 
-def insert_multi_author(authors_list, database=None):
-    database = database if database else init_database()
+def insert_multi_author(authors_list):
     authors_id = []
     for author in authors_list:
         authors_id.append(insert_author(**author))
     return authors_id
 
 
-def connect_multi_article_authors(article_id, authors_id_list, database=None):
-    database = database if database else init_database()
+def connect_multi_article_authors(article_id, authors_id_list):
     for author_id in authors_id_list:
         connect_article_author(article_id, author_id)
 
 
-def insert_article_data(pii, authors, database=None, **kwargs):
-    database = database if database else init_database()
+def insert_article_data(pii, authors, **kwargs):
     article_id = insert_article(pii=pii)
 
     authors_id = insert_multi_author(authors)
@@ -109,24 +87,38 @@ def update_article():
     raise NotImplementedError
 
 
-def update_author(database,):
-    database = database if database else init_database()
-    raise NotImplementedError
+def update_author_scopus(name, id):
+    sql = 'UPDATE sciencedirect.authors SET scopus=%s WHERE name=%s LIMIT 1;'
+    val = (id, name)
+    database.cursor.execute(sql, val)
+    database.commit()
+    author_id = database.cursor.lastrowid
+    return author_id
+
 
 # SELECT
 
 
-def is_row_exist(table, column, value, database=None):
-    database = database if database else init_database()
+def is_row_exist(table, column, value):
     sql = "SELECT EXISTS(SELECT 1 FROM %s WHERE %s='%s' LIMIT 1)"
     val = (table, column, value)
-    _cursor.execute(sql, val)
-    result = _cursor.fetch()
+    database.cursor.execute(sql, val)
+    result = database.cursor.fetch()
     return result
 
 
-def get_article_authors(article_id, database=None):
-    database = database if database else init_database()
+def get_id_less_authors():
+    sql = "SELECT author_id, name, email, scopus, affiliation FROM sciencedirect.authors WHERE scopus = NULL"
+    database.cursor.execute(sql)
+    authors = database.cursor.fetchall()
+    res = []
+    for author in authors:
+        last, first = name.split('|')
+        res.append({'last_name': last, 'first_name': first})
+    return res
+
+
+def get_article_authors(article_id):
     sql = "SELECT t1.title, t3.name\
           FROM articles AS t1\
           JOIN article_authors AS t2 ON t1.article_id = t2.article_id\
@@ -134,15 +126,14 @@ def get_article_authors(article_id, database=None):
           WHERE t2.author_id = %s"
 
     val = (article_id, )
-    _cursor.execute(sql, val)
+    database.cursor.execute(sql, val)
 
-    myresult = _cursor.fetchall()
+    myresult = database.cursor.fetchall()
     return myresult
 
 
-def get_articles_of_author(sql, val, database=None):
-    database = database if database else init_database()
-    _cursor.execute(sql, val)
+def get_articles_of_author(sql, val):
+    database.cursor.execute(sql, val)
 
 
 def executeScriptsFromFile(filename, cursor):
@@ -163,7 +154,3 @@ def executeScriptsFromFile(filename, cursor):
                 cursor.execute(command)
         except ValueError as msg:
             print("Command skipped: ", msg)
-
-
-if __name__ == "__main__":
-    main()

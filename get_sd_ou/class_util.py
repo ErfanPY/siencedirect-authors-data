@@ -172,7 +172,9 @@ class Page(Url, Find):
 
 
 class Author(dict):
-    def __init__(self, first_name, last_name, id='', email='', affiliation='', is_coresponde=False):
+    def __init__(self, first_name, last_name, id='', email='',
+                 affiliation='', is_coresponde=False, do_scopus=False):
+
         logger.debug('[ Author ] __init__ | name: %s', first_name + last_name)
         self['first_name'] = first_name
         self['last_name'] = last_name
@@ -180,7 +182,8 @@ class Author(dict):
         self['email'] = email
         self['affiliation'] = affiliation
         self['is_coresponde'] = is_coresponde
-        self.get_scopus()
+        if do_scopus:
+            self.get_scopus()
 
     def get_scopus(self):
         scopus_search = 'https://www.scopus.com/results/authorNamesList.uri?sort=count-f&src=al&sid=9d5d4784ba0ec31261499d113b0fc914&sot=al&sdt=al&sl=52&s=AUTHLASTNAME%28EQUALS%28{0}%29%29+AND+AUTHFIRST%28{1}%29&st1={0}&st2={1}&orcidId=&selectionPageSearch=anl&reselectAuthor=false&activeFlag=true&showDocument=false&resultsPerPage=20&offset=1&jtp=false&currentPage=1&previousSelectionCount=0&tooManySelections=false&previousResultCount=0&authSubject=LFSC&authSubject=HLSC&authSubject=PHSC&authSubject=SOSC&exactAuthorSearch=true&showFullList=false&authorPreferredName=&origin=searchauthorfreelookup&affiliationId=&txGid=2902d9dc14a46e0e513784d44e52bc5d'

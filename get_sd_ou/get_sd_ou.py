@@ -3,8 +3,8 @@ import queue
 import threading
 import logging
 
-from .class_util import Article, Search_page
-from .database_util import insert_article_data
+from .class_util import Article, Search_page, Author
+from .database_util import insert_article_data, get_id_less_authors, update_author_scopus
 from flask import Flask
 from celery import Celery
 
@@ -94,6 +94,15 @@ def pages_worker(**search_kwargs):
         for article_url in articles:
             data = Article(article_url).get_article_data()
             insert_article_data(**data)
+
+
+@celery.task(bind=True)
+def scopus_finder(self):
+    authors = get_id_less_authors()
+    for author in authors:
+        author = Author(**author, do_scopus=True)
+        update_author_scopus(
+            name=author['name'], scopus_id=author['id'])
 
 
 @celery.task(bind=True)
