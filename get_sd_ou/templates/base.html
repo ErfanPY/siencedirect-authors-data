@@ -6,17 +6,17 @@
 <body>
 
   <div>
-      <a href="/start">Start</a>  // <a href="/Stop">Stop</a> // 
-      <a href="/status">Status</a> // <a href="/dbstatus">Database status</a>
+    <a href="/start">Start</a> // <a href="/Stop">Stop</a> //
+    <a href="/status">Status</a> // <a href="/dbstatus">Database status</a>
   </div>
 
   <hr>
   {% with messages = get_flashed_messages() %}
   {% if messages %}
   <ul>
-      {% for message in messages %}
-      <li>{{ message }}</li>
-      {% endfor %}
+    {% for message in messages %}
+    <li>{{ message }}</li>
+    {% endfor %}
   </ul>
   {% endif %}
   {% endwith %}

@@ -21,9 +21,9 @@ def insert_article(pii, title=''):
     # update = UPDATE articles SET title=%S
     sql = "INSERT IGNORE INTO sciencedirect.articles (pii, title) VALUES (%s, %s);"
     val = (pii, title)
-    database.cursor.execute(sql, val)
+    database.cursor().execute(sql, val)
     database.commit()
-    article_id = database.cursor.lastrowid
+    article_id = database.cursor().lastrowid
     logger.debug(
         '[ database ] article inserted | pii: %s  id: %s', pii, article_id)
     return article_id
@@ -35,9 +35,9 @@ def insert_author(first_name, last_name, email='', affiliation='', is_coresponde
             VALUES (%s, %s, %s, %s)"
 
     val = (name, email, affiliation, id)
-    database.cursor.execute(sql, val)
+    database.cursor().execute(sql, val)
     database.commit()
-    author_id = database.cursor.lastrowid
+    author_id = database.cursor().lastrowid
     logger.debug(
         '[ database ] author inserted | name: %s  id: %s', name, author_id)
     return author_id
@@ -47,7 +47,7 @@ def connect_article_author(article_id, author_id, is_corresponde=0):
     # TODO connect article with pii (get article id from articles from pii)
     sql = "INSERT IGNORE INTO sciencedirect.article_authors (article_id, author_id, is_corresponde) VALUES (%s, %s, %s);"
     val = (article_id, author_id, is_corresponde)
-    database.cursor.execute(sql, val)
+    database.cursor().execute(sql, val)
     database.commit()
     logger.debug(
         '[ database ] article and author connected | article_id: %s  author_id: %s', article_id, author_id)
@@ -89,9 +89,9 @@ def update_article():
 def update_author_scopus(name, id):
     sql = 'UPDATE sciencedirect.authors SET scopus=%s WHERE name=%s LIMIT 1;'
     val = (id, name)
-    database.cursor.execute(sql, val)
+    database.cursor().execute(sql, val)
     database.commit()
-    author_id = database.cursor.lastrowid
+    author_id = database.cursor().lastrowid
     return author_id
 
 
@@ -101,15 +101,15 @@ def update_author_scopus(name, id):
 def is_row_exist(table, column, value):
     sql = "SELECT EXISTS(SELECT 1 FROM %s WHERE %s='%s' LIMIT 1)"
     val = (table, column, value)
-    database.cursor.execute(sql, val)
-    result = database.cursor.fetch()
+    database.cursor().execute(sql, val)
+    result = database.cursor().fetch()
     return result
 
 
 def get_id_less_authors():
     sql = "SELECT name FROM sciencedirect.authors WHERE scopus is NULL"
-    database.cursor.execute(sql)
-    names = database.cursor.fetchall()
+    database.cursor().execute(sql)
+    names = database.cursor().fetchall()
     res = []
     for name in names:
         last, first = name.split('|')
@@ -125,14 +125,14 @@ def get_article_authors(article_id):
           WHERE t2.author_id = %s"
 
     val = (article_id, )
-    database.cursor.execute(sql, val)
+    database.cursor().execute(sql, val)
 
-    myresult = database.cursor.fetchall()
+    myresult = database.cursor().fetchall()
     return myresult
 
 
 def get_articles_of_author(sql, val):
-    database.cursor.execute(sql, val)
+    database.cursor().execute(sql, val)
 
 
 def executeScriptsFromFile(filename, cursor):
