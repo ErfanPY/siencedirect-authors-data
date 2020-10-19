@@ -112,10 +112,11 @@ def get_id_less_authors():
     sql = "SELECT name FROM sciencedirect.authors WHERE scopus is NULL"
     cursor.execute(sql)
     logger.debug('[db_util] [id_less_authors] one part got')
-    chunk_size=10
+    chunck_size = 10
     names = cursor.fetchmany(chunck_size)
     while names :
-        yield names
+        for name in names:
+            yield name[0]
         names = cursor.fetchmany(chunck_size)
     logger.debug('[db_util] id_less_authors name got from database')
 

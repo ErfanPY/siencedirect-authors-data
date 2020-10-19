@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import queue
+from re import search
 import threading
 import logging
 
@@ -98,38 +99,47 @@ def pages_worker(**search_kwargs):
 
 @celery.task(bind=True, name='scopus_search')
 def scopus_search(self):
-    logger.debug('[Scopus_search] started')
-    parts = get_id_less_authors()
-    for names in parts:
-        logger.debug('[Scopus_search] one part taken')
-        for name in names:
-            last, first = name.split('|')
-            name = {'last_name': last, 'first_name': first}
-            logger.debug(f'getting scopus | name:{name}')
-            author = Author(**name, do_scopus=True)
-            update_author_scopus(name=author['name'], id=author['id'])
+    names = get_id_less_authors()
+    for name in names:
+        author = Author(**name, do_scopus=True)
+        update_author_scopus(name=author['name'], id=author['id'])
 
+def init_queue():
+    global main_queue   
+    main_queue = queue.Queue()
+    return main_queue
+
+def get_from_queue():
+    while True:
+        yield main_queue.get()
+
+def put_to_queue(task):
+    main_queue.put(task)
+
+def done_to_queue():
+    main_queue.task_done()
 
 @celery.task(bind=True, name='start_search')
 def start_search(self, **search_kwargs):
-    #global threads
-    global main_queue
     global next_year_gen_obj
-    """ 
-    1) Initiate the threads
-    2) Initiate the database connection
-    3) Call the worker function of each thread
-    """
+    init_queue()
     start_year = search_kwargs.get('date', '')
     self.update_state(state='PROGRESS',
                       meta={'current': 1, 'total': 100,
                             'status': 'Starting'})
+    while True:
+        for page_url in page_gen(**search_kwargs):
+            for article_url in Search_page(page_url).articles:
+                article = Article(article_url)
+                article_data = article.get_article_data()
+                insert_article_data(**article_data)
+
+            
     if start_year == '':
         logger.debug('[main] [start_search] no year')
         search_kwargs['date'] = ''
         next_page_gen_obj = next_page_gen(**search_kwargs)
         continue_search = True
-        main_queue = queue.Queue()
         logger.debug('[main] [start_search] no year')
         while continue_search:
             if main_queue.empty():
@@ -157,7 +167,6 @@ def start_search(self, **search_kwargs):
             article_data = article.get_article_data()
             logger.info('Article authors got , %s', article_data)
             status_text = '{} author got'.format(article.url)
-            logger.debug('\n\n#######\nI am here\n##############\n\n')
             self.update_state(state='PROGRESS',
                               meta={'current': 2, 'total': 100,
                                     'status': status_text})
@@ -207,9 +216,7 @@ def start_search(self, **search_kwargs):
 
         main_queue.task_done()
 
-    #threads = [threading.Thread(target=worker, kwargs=search_kwargs) for _ in range(2)]
-    #[thread.start() for thread in threads]
-    main_queue.join()
+main_queue.join()
 
 
 def pause_search():
