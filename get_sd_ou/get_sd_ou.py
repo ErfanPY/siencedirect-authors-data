@@ -98,10 +98,16 @@ def pages_worker(**search_kwargs):
 
 @celery.task(bind=True, name='scopus_search')
 def scopus_search(self):
-    names = get_id_less_authors()
-    for name in names:
-        author = Author(**name, do_scopus=True)
-        update_author_scopus(name=author['name'], id=author['id'])
+    logger.debug('[Scopus_search] started')
+    parts = get_id_less_authors()
+    for names in parts:
+        logger.debug('[Scopus_search] one part taken')
+        for name in names:
+            last, first = name.split('|')
+            name = {'last_name': last, 'first_name': first}
+            logger.debug(f'getting scopus | name:{name}')
+            author = Author(**name, do_scopus=True)
+            update_author_scopus(name=author['name'], id=author['id'])
 
 
 @celery.task(bind=True, name='start_search')
