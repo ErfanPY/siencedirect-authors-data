@@ -78,11 +78,9 @@
     <div id="progress"></div>
     <script>
         function start_long_task(form) {
-            // add task status elements
             div = $('<div class="progress"><div></div><div>0%</div><div>...</div><div>&nbsp;</div></div><hr>');
             $('#progress').append(div);
             document.getElementById('progress').scrollIntoView();
-            // create a progress bar
             var nanobar = new Nanobar({
                 bg: '#44f',
                 target: div[0].childNodes[0]
@@ -142,12 +140,13 @@
         // });
         function update_progress(status_url, nanobar, status_div) {
             // send GET request to status URL
-
+            console.log('UPDATE')
             $.getJSON(status_url, function (data) {
                 // update UI
                 percent = parseInt(data['current'] * 100 / data['total']);
                 nanobar.go(percent);
-                $(status_div.childNodes[1]).text(percent + '%');
+                console.log('GO')
+                $(status_div.childNodes[1]).text(percent + '%' + '( ' + data['current'] + '/' + data['total'] + ' )');
                 $(status_div.childNodes[2]).text(data['status']);
                 if (data['state'] != 'PENDING' && data['state'] != 'PROGRESS') {
                     if ('result' in data) {

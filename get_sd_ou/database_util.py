@@ -113,10 +113,11 @@ def get_id_less_authors():
     cursor.execute(sql)
     logger.debug('[db_util] [id_less_authors] one part got')
     chunk_size=10
-    names = cursor.fetchmany(chunck_size)
+    names = cursor.fetchmany(chunk_size)
     while names :
-        yield names
-        names = cursor.fetchmany(chunck_size)
+        for name in names:
+            yield name[0]
+        names = cursor.fetchmany(chunk_size)
     logger.debug('[db_util] id_less_authors name got from database')
 
 def get_article_authors(article_id):

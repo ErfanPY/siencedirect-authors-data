@@ -318,11 +318,16 @@ class Search_page (Page):
             print(url)
         logger.debug('[ Search_page ] __init__ | url: %s', url)
         super().__init__(url)
+        
         self.url = url
         self.query = dict(self.url_parts.query)
+        self.show_per_page = show_per_page
+
+    def __bool__(self):
+        return self.url != ''
 
     def get_articles(self):
-        logger.debug('[ Search_page ] getting articles | year: %s')
+        logger.debug('[ Search_page ] getting articles | url: %s', self.url)
         search_result = self.soup.find_all('a')
         articles = []
         for article in search_result:
@@ -332,13 +337,31 @@ class Search_page (Page):
                     articles.append(
                         urljoin('https://'+self.url_parts.netloc, article_link))
                     logger.debug(
-                        '[ Search_page ] one article added | year: %s')
-        logger.debug('[ Search_page ] all articels got | year: %s')
+                        '[ Search_page ] one article added | url: %s', self.url)
+        logger.debug('[ Search_page ] all articels got | url: %s', self.url)
         return articles
 
     @property
+    def curent_page_num(self):
+        if not hasattr(self, '_curent_page_num'):
+            page_coursor_text = self.soup.select_one(
+                '#srp-pagination > li:nth-child(1)').text
+            self._curent_page_num = int(page_coursor_text.split(' ')[1])
+        return self._curent_page_num
+
+    @property
     def pages_count(self):
-        return self.soup.select_one('#srp-pagination > li:nth-child(1)')
+        if not hasattr(self, '_pages_count'):
+            page_coursor_text = self.soup.select_one(
+                '#srp-pagination > li:nth-child(1)').text
+            self._pages_count = int(page_coursor_text.split(' ')[-1])
+        return self._pages_count
+
+    @property
+    def total_article_count(self):
+        if not hasattr(self, '_total_article_count'):
+            self._total_article_count = self.pages_count * self.show_per_page
+        return self._total_article_count
 
     def next_page(self):
         next_url = self.soup.select_one('li.next-link > a')
