@@ -1,0 +1,111 @@
+{% extends "base.html" %} {% block content %}
+
+<style>
+    .column {
+        float: left;
+        width: 50%;
+    }
+    /* Clear floats after the columns */
+    
+    .row:after {
+        content: "";
+        display: table;
+        clear: both;
+    }
+</style>
+</head>
+
+<body>
+    <h1>Database search</h1>
+    {% for message in get_flashed_messages() %}
+    <p style="color: red;">{{ message }}</p>
+    {% endfor %}
+
+    <form id="start_form" method="POST">
+        {{ form.hidden_tag() }}
+        <p>
+            {{ form.start_year.label }}<br> {{ form.start_year(class_="form-input") }} {% for error in form.start_year.errors %}
+            <span style="color: red;">[{{ error }}]</span> {% endfor %}
+        </p>
+        <p>
+            <div class="row">
+                <div class="column">
+                    {{ form.term.label }}<br> {{ form.term(class_="form-input") }}<br> {{ form.pub_title.label }}<br> {{ form.pub_title(class_="form-input") }}<br> {{ form.authors.label }}<br> {{ form.authors(class_="form-input") }}<br> {{ form.affiliation.label
+                    }}
+                    <br> {{ form.affiliation(class_="form-input") }}<br> {{ form.volume.label }}
+                    <br> {{ form.volume(class_="form-input") }}<br> {{ form.issue.label }}<br> {{ form.issue(class_="form-input") }}
+                </div>
+                <div class="column">
+                    {{ form.page.label }}<br> {{ form.page(class_="form-input") }}<br> {{ form.keywords.label }}<br> {{ form.keywords(class_="form-input") }}<br> {{ form.title.label }}<br> {{ form.title(class_="form-input") }}<br> {{ form.refrence.label
+                    }}
+                    <br> {{ form.refrence(class_="form-input") }}<br> {{ form.issn.label }}<br> {{ form.issn(class_="form-input") }}
+                </div>
+            </div>
+        </p>
+        <p>{{ form.submit() }}</p>
+    </form>
+    <hr>
+    <h2>Search results</h2>
+
+    <div id="result"></div>
+    <script>
+        $(document).ready(function() {
+            $('#start_form')[0].reset();
+            $(".form-input").keyup(function() {
+                form = $("#start_form")
+                $.ajax({
+                    type: 'POST',
+                    url: '/db_suggest',
+                    data: form.serialize(),
+                    success: function(data) {
+                        console.log(data);
+                    },
+                    error: function() {
+                        alert('Unexpected error');
+                    }
+                });
+            });
+        });
+
+        // function start_long_task(form) {
+        //     div = $('<div class="result"><div></div><div>0%</div><div>...</div><div>&nbsp;</div></div><hr>');
+        //     $('#result').append(div);
+        //     document.getElementById('result').scrollIntoView();
+
+        //     console.log(form.serialize())
+        //     $.ajax({
+        //         type: 'POST',
+        //         url: '/longtask',
+        //         data: form.serialize(),
+        //         success: function(data, status, request) {
+        //             status_url = request.getResponseHeader('Location');
+        //             update_suggestions(status_url, div[0]);
+        //         },
+        //         error: function() {
+        //             alert('Unexpected error');
+        //         }
+        //     });
+        // }
+
+        // $("#start_form").submit(function(e) {
+        //     e.preventDefault(); // avoid to execute the actual submit of the form.
+        //     var form = $(this);
+
+        //     start_long_task(form)
+        // });
+        // $(".forminput").onkeyup(function(e) {
+        //     $(this)
+        //     var form = $("#start_form");
+
+        //     update_suggestions(form);
+        // });
+
+        // function update_suggestions(form_data) {
+        //     console.log('UPDATE')
+        //     $.getJSON('/', form_data.serialize(), function(data) {
+
+        //     });
+        // }
+    </script>
+</body>
+{% endblock %}

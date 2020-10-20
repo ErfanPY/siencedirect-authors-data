@@ -98,6 +98,21 @@ def update_author_scopus(name, id):
 
 # SELECT
 
+def get_search_suggest(**search_kwargs):
+    sql = "SELECT * FROM sciencedirect.searchs WHERE "
+    val = []
+    for key, value in search_kwargs.items():
+        if value:
+            val.append(key)
+            val.append(value)
+            sql += '%s LIKE %s AND '
+    sql = sql[:-5]
+    print(sql)
+    cursor.execute(sql, val)
+    return cursor.fetchall()
+
+
+        
 
 def is_row_exist(table, column, value):
     sql = "SELECT EXISTS(SELECT 1 FROM %s WHERE %s='%s' LIMIT 1)"

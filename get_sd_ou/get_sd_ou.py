@@ -5,7 +5,7 @@ import threading
 import logging
 
 from .class_util import Article, Search_page, Author
-#from .database_util import insert_article_data, get_id_less_authors, update_author_scopus
+from .database_util import insert_article_data, get_id_less_authors, update_author_scopus
 from flask import Flask
 from celery import Celery
 
@@ -93,7 +93,7 @@ def start_search(self, **search_kwargs):
             self.update_state(state='PROGRESS',
                               meta={'current': index_current_page, 'total': pages_count,
                                     'status': f'{index_current_article}/{articles_count} \n {article.url}'})
-
+            time.sleep(0.1)
 
 if __name__ == "__main__":
     logger.debug(
