@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS `articles` (
   `article_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `pii` varchar(20) NOT NULL,
   `title` text DEFAULT NULL,
+  `bibtex` VARCHAR(2083) DEFAULT NULL,
   PRIMARY KEY (`article_id`),
   UNIQUE KEY `pii` (`pii`)
 ) ENGINE=InnoDB AUTO_INCREMENT=60 DEFAULT CHARSET=utf8mb4;

@@ -258,7 +258,9 @@ class Article(Page):
 
             for group in authors_groups_list_json:  # in authors maybe some group which devides authors
                 group_aff = list(filter(lambda dict: dict['#name'] == 'affiliation', group['$$']))[
-                    0]['$$'][0]['_']
+                    0]['$$']
+                group_aff = list(filter(lambda dict: dict['#name'] == 'textfn', group_aff))[
+                    0]['_']
                 group_aff_country = group_aff.split(',')[-1].strip()
                 group_authors = list(
                     filter(lambda dict: dict['#name'] == 'author', group['$$']))
@@ -331,7 +333,7 @@ class Search_page (Page):
         search_kwargs = self.search_kwargs
         search_kwargs['offset'] = 0
         return sha1(json.dumps(search_kwargs, sort_keys=True, ensure_ascii=False).encode('utf-8')).hexdigest()
-        
+
     def __bool__(self):
         return self.url != ''
 
