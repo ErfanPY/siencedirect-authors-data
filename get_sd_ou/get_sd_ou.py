@@ -8,11 +8,13 @@ import logging
 from .class_util import Article, Search_page, Author
 from .database_util import (insert_article_data, insert_search,
                             get_id_less_authors, get_search, update_author_scopus,
-                            update_search_offset)
+                            update_search_offset, connect_search_article)
 from flask import Flask
 from celery import Celery
 
 logger = logging.getLogger('mainLogger')
+
+do_bibtex = False
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'top top secret!'

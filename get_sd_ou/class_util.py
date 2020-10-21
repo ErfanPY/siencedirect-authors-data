@@ -210,7 +210,7 @@ class Article(Page):
         self.pii = self.get_pii()
         logger.debug('[ Article ] __init__ | pii: %s', self.pii)
         super().__init__(url, *args, **kwargs)
-        self.bibtex = None
+        self.bibtex = ''
         if do_bibtex:
             self.bibtex = self.export_bibtex()
 
@@ -234,7 +234,7 @@ class Article(Page):
         self.bibtex_file_path = f'articles/{self.pii}.bib'
         with open(self.bibtex_file_path, 'ab') as f:
             f.write(requests.get(self.bibtex_url, headers=self.headers))
-        return {'bibtex_url': self.bibtex_url, 'bibtex_file_path': self.bibtex_file_path}
+        return self.bibtex_url
 
     def _author_icons(self, tag_a):
         is_coresponde = bool(tag_a.select('.icon-person'))
