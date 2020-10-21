@@ -1,3 +1,5 @@
+from hashlib import sha1
+import json
 from re import search
 import mysql.connector
 import logging
@@ -14,7 +16,7 @@ cnx = mysql.connector.connect(
 cursor = cnx.cursor(buffered=True)
 
 #executeScriptsFromFile('/root/dev/sciencedirect-authors-data/db/scripts/sciencedirect.sql', database.cursor)
-#cnx.commit()
+# cnx.commit()
 
 # INSERT
 
@@ -55,25 +57,30 @@ def connect_article_author(article_id, author_id, is_corresponde=0):
         '[ database ] article and author connected | article_id: %s  author_id: %s', article_id, author_id)
 
 
-def insert_search(**search_kwargs):
-    sql = "INSET INTO sciencedirect.searchs ( "
-    val = []
-    search_values = []
-    for key, value in search_kwargs.items():
-        if value:
-            val.append(key)
-            sql += key
-            search_values.append(value)
-    sql += ') VALUES ('
-    for search_value in search_values:
-        val.append(search_value)
-        sql += search_value
-    sql += ');'
-    print(sql)
+def connect_search_article(search_id, article_id):
+    # TODO connect article with pii (get article id from articles from pii)
+    sql = "INSERT IGNORE INTO sciencedirect.search_articles (search_id, article_id) VALUES (%s, %s);"
+    val = (search_id, article_id)
     cursor.execute(sql, val)
+    cnx.commit()
+    logger.debug(
+        '[ database ] search and article connected | search_id: %s  article_id: %s', search_id, article_id)
 
+def insert_search(search_hash, **search_kwargs):
+    sql = "INSET INTO sciencedirect.searchs (hash, date, qs, pub, authors, affiliation, volume, issue, page, tak, titile, refrences, docId) VALUES ("
+    val = []
+    key_list = ['date', 'qs', 'pub', 'authors', 'affiliation', 'volume', 'issue', 'page', 'tak', 'titile', 'refrences', 'docId']
+    val.append(search_hash)
+    
+    for _ in key_list:
+        sql += '%s, '
+    sql = sql[:-3]
+    sql += ');'
 
-def connect_search_article():
+    for key in key_list:
+        val.append(search_kwargs.get(key, ''))
+    print(sql, val)
+    #cursor.execute(sql, val)
     raise NotImplementedError
 
 
@@ -111,6 +118,14 @@ def update_author_scopus(name, id):
     return author_id
 
 
+def update_search_offset(offset, hash):
+    sql = 'UPDATE sciencedirect.searchs SET offset=%s WHERE hash=%s LIMIT 1;'
+    val = (offset, hash)
+    cursor.execute(sql, val)
+    cnx.commit()
+    search_id = cursor.lastrowid
+    return search_id
+
 # SELECT
 
 def get_search_suggest(**search_kwargs):
@@ -126,6 +141,7 @@ def get_search_suggest(**search_kwargs):
     cursor.execute(sql, val)
     return cursor.fetchall()
 
+
 def get_search(**search_kwargs):
     sql = "SELECT * FROM sciencedirect.searchs WHERE "
     val = []
@@ -137,7 +153,8 @@ def get_search(**search_kwargs):
     sql = sql[:-5]
     print(sql)
     cursor.execute(sql, val)
-    return cursor.fetch()    
+    return cursor.fetch()
+
 
 def is_row_exist(table, column, value):
     sql = "SELECT EXISTS(SELECT 1 FROM %s WHERE %s='%s' LIMIT 1)"
@@ -152,13 +169,14 @@ def get_id_less_authors():
     sql = "SELECT name FROM sciencedirect.authors WHERE scopus is NULL"
     cursor.execute(sql)
     logger.debug('[db_util] [id_less_authors] one part got')
-    chunk_size=10
+    chunk_size = 10
     names = cursor.fetchmany(chunk_size)
-    while names :
+    while names:
         for name in names:
             yield name[0]
         names = cursor.fetchmany(chunk_size)
     logger.debug('[db_util] id_less_authors name got from database')
+
 
 def get_article_authors(article_id):
     sql = "SELECT t1.title, t3.name\

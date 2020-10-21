@@ -1,9 +1,11 @@
-import re
+from hashlib import sha1
 import json
 import logging
+import re
+from urllib.parse import parse_qsl, unquote_plus, urljoin, urlparse
+
 import requests
 from bs4 import BeautifulSoup as bs
-from urllib.parse import urlparse, urljoin, parse_qsl, unquote_plus
 
 logger = logging.getLogger('mainLogger')
 
@@ -318,11 +320,18 @@ class Search_page (Page):
             print(url)
         logger.debug('[ Search_page ] __init__ | url: %s', url)
         super().__init__(url)
-        
+
         self.url = url
+        self.search_kwargs = search_kwargs
         self.query = dict(self.url_parts.query)
         self.show_per_page = show_per_page
+        self.offset = self.query.get('offset', '0')
 
+    def __hash__(self):
+        search_kwargs = self.search_kwargs
+        search_kwargs['offset'] = 0
+        sha1(json.dumps(search_kwargs, sort_keys=True, ensure_ascii=False).encode('utf-8')).hexdigest()
+        
     def __bool__(self):
         return self.url != ''
 

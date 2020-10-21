@@ -71,7 +71,7 @@ CREATE TABLE IF NOT EXISTS `searchs` (
   `affiliation` varchar(50) DEFAULT NULL,
   `volume` varchar(50) DEFAULT NULL,
   `issue` varchar(50) DEFAULT NULL,
-  `page` varchar(50) NOT NULL,
+  `page` varchar(50) DEFAULT NULL,
   `tak` varchar(50) DEFAULT NULL,
   `title` varchar(50) DEFAULT NULL,
   `refrences` varchar(50) DEFAULT NULL,

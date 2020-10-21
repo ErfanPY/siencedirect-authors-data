@@ -6,7 +6,9 @@ import threading
 import logging
 
 from .class_util import Article, Search_page, Author
-from .database_util import insert_article_data, get_id_less_authors, update_author_scopus, get_search, insert_search
+from .database_util import (insert_article_data, insert_search, 
+                            get_id_less_authors, get_search, update_author_scopus,
+                            update_search_offset)
 from flask import Flask
 from celery import Celery
 
@@ -37,23 +39,6 @@ def scopus_search(self):
         update_author_scopus(name=author['name'], id=author['id'])
 
 
-def init_queue():
-    global main_queue
-    main_queue = queue.Queue()
-    return main_queue
-
-
-def get_from_queue():
-    res = main_queue.get()
-    while res:
-        yield res
-        res = main_queue.get()
-
-
-def put_to_queue(task):
-    main_queue.put(task)
-
-
 def get_next_page(queue_id='', **search_kwargs):
     while True:
         search_obj = Search_page(**search_kwargs)
@@ -76,18 +61,23 @@ def get_next_article(search_page):
                'articles_count': len(articles)}
         yield res
 
+
 def get_prev_serach_offset(**search_kwargs):
-    search =  get_search(**search_kwargs)
+    search = get_search(**search_kwargs)
     if not search:
         search_kwargs['offset'] = 0
         insert_search(**search_kwargs)
-        return 0 
+        return 0
     return search['offset']
+
 
 @celery.task(bind=True, name='start_search')
 def start_search(self, **search_kwargs):
     search_kwargs['offset'] = get_prev_serach_offset(**search_kwargs)
+    first_page = True
     for page_res in get_next_page(**search_kwargs):
+        if not first_page :
+            update_search_offset(hash=hash(page_res), offset=page_res.offset)
         page, index_current_page, pages_count = page_res.values()
         self.update_state(state='PROGRESS',
                           meta={'current': index_current_page, 'total': pages_count,
@@ -97,8 +87,25 @@ def start_search(self, **search_kwargs):
         for article_res in get_next_article(page):
             article, index_current_article, articles_count = article_res.values()
             article_data = article.get_article_data()
-            # insert_article_data(**article_data)
+            insert_article_data(**article_data)
             self.update_state(state='PROGRESS',
                               meta={'current': index_current_page, 'total': pages_count,
                                     'status': f'{index_current_article}/{articles_count} \n {article.url}'})
             time.sleep(0.1)
+        first_page = False
+
+def init_queue():
+    global main_queue
+    main_queue = queue.Queue()
+    return main_queue
+
+
+def get_from_queue():
+    res = main_queue.get()
+    while res:
+        yield res
+        res = main_queue.get()
+
+
+def put_to_queue(task):
+    main_queue.put(task)

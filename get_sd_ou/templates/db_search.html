@@ -1,5 +1,6 @@
 {% extends "base.html" %} {% block content %}
-
+<link rel="stylesheet" href="/static/awesomplete.css" />
+<script src="/static/awesomplete.js" async></script>
 <style>
     .column {
         float: left;
@@ -49,6 +50,16 @@
 
     <div id="result"></div>
     <script>
+        function update_suggestions(data) {
+            Object.entries(data).forEach(([key, value]) => {
+                value.insertAfter(document.getElementById(key))
+                var input = document.getElementById(key);
+                aws = new Awesomplete(input, {list: value, maxItems: 3, tabSelect: true, filter:function(text, input){return true;}});
+                aws.open()
+                }
+            )
+        };
+
         $(document).ready(function() {
             $('#start_form')[0].reset();
             $(".form-input").keyup(function() {
@@ -58,7 +69,7 @@
                     url: '/db_suggest',
                     data: form.serialize(),
                     success: function(data) {
-                        console.log(data);
+                        update_suggestions(data);
                     },
                     error: function() {
                         alert('Unexpected error');
@@ -66,46 +77,6 @@
                 });
             });
         });
-
-        // function start_long_task(form) {
-        //     div = $('<div class="result"><div></div><div>0%</div><div>...</div><div>&nbsp;</div></div><hr>');
-        //     $('#result').append(div);
-        //     document.getElementById('result').scrollIntoView();
-
-        //     console.log(form.serialize())
-        //     $.ajax({
-        //         type: 'POST',
-        //         url: '/longtask',
-        //         data: form.serialize(),
-        //         success: function(data, status, request) {
-        //             status_url = request.getResponseHeader('Location');
-        //             update_suggestions(status_url, div[0]);
-        //         },
-        //         error: function() {
-        //             alert('Unexpected error');
-        //         }
-        //     });
-        // }
-
-        // $("#start_form").submit(function(e) {
-        //     e.preventDefault(); // avoid to execute the actual submit of the form.
-        //     var form = $(this);
-
-        //     start_long_task(form)
-        // });
-        // $(".forminput").onkeyup(function(e) {
-        //     $(this)
-        //     var form = $("#start_form");
-
-        //     update_suggestions(form);
-        // });
-
-        // function update_suggestions(form_data) {
-        //     console.log('UPDATE')
-        //     $.getJSON('/', form_data.serialize(), function(data) {
-
-        //     });
-        // }
     </script>
 </body>
 {% endblock %}
