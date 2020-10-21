@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
+from re import search
 import time
 import queue
 import threading
 import logging
 
 from .class_util import Article, Search_page, Author
-#from .database_util import insert_article_data, get_id_less_authors, update_author_scopus
+from .database_util import insert_article_data, get_id_less_authors, update_author_scopus, get_search, insert_search
 from flask import Flask
 from celery import Celery
 
@@ -75,11 +76,18 @@ def get_next_article(search_page):
                'articles_count': len(articles)}
         yield res
 
+def get_prev_serach_offset(**search_kwargs):
+    search =  get_search(**search_kwargs)
+    if not search:
+        search_kwargs['offset'] = 0
+        insert_search(**search_kwargs)
+        return 0 
+    return search['offset']
 
 @celery.task(bind=True, name='start_search')
 def start_search(self, **search_kwargs):
+    search_kwargs['offset'] = get_prev_serach_offset(**search_kwargs)
     for page_res in get_next_page(**search_kwargs):
-        print('########', page_res, '\n\n\n')
         page, index_current_page, pages_count = page_res.values()
         self.update_state(state='PROGRESS',
                           meta={'current': index_current_page, 'total': pages_count,
@@ -93,9 +101,4 @@ def start_search(self, **search_kwargs):
             self.update_state(state='PROGRESS',
                               meta={'current': index_current_page, 'total': pages_count,
                                     'status': f'{index_current_article}/{articles_count} \n {article.url}'})
-
-
-if __name__ == "__main__":
-    logger.debug(
-        '___________________________________________[ Search Start ]________________________________________')
-    start_search(2020)
+            time.sleep(0.1)

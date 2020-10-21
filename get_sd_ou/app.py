@@ -5,22 +5,23 @@ from flask import (Flask, request, render_template, session, flash,
 from flask_wtf import FlaskForm
 from wtforms import StringField, IntegerField, SubmitField
 
-from celery import Celery
-import time
+# from celery import Celery
+# import time
 import logging
-from get_sd_ou import get_sd_ou
+# from get_sd_ou import get_sd_ou
+from get_sd_ou.database_util import get_search_suggest
 logger = logging.getLogger('mainLogger')
 logger.debug('[app] INIT')
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'top top secret!'
 
-app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
-app.config['CELERY_RESULT_BACKEND'] = 'redis://localhost:6379/0'
-app.config['CELERY_IGNORE_RESULT'] = False
+# app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
+# app.config['CELERY_RESULT_BACKEND'] = 'redis://localhost:6379/0'
+# app.config['CELERY_IGNORE_RESULT'] = False
 
-celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
+# celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
 
-celery.conf.update(app.config)
+# celery.conf.update(app.config)
 
 
 class StartForm(FlaskForm):
@@ -75,6 +76,26 @@ def scopus_status(task_id):
 
     return jsonify(response)
 
+@app.route('/db_search')
+def db_search():
+    form = StartForm()
+    return render_template('db_search.html', form=form)
+
+
+@app.route('/db_suggest', methods=['POST'])
+def db_suggest():
+    form = dict(request.form)
+    del form['csrf_token']
+    suggests = get_search_suggest(**form)
+    res = {}
+    for key in form:
+        res[key] = []
+    for suggest in suggests:
+        for key, value in suggest.items():
+            if value and not form[key] and key in form:
+                res[key].append(value)
+
+    return jsonify(res)
 
 @app.route('/longtask', methods=['POST'])
 def longtask():

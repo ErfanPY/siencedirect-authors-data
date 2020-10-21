@@ -1,3 +1,4 @@
+from re import search
 import mysql.connector
 import logging
 
@@ -54,8 +55,22 @@ def connect_article_author(article_id, author_id, is_corresponde=0):
         '[ database ] article and author connected | article_id: %s  author_id: %s', article_id, author_id)
 
 
-def insert_search():
-    raise NotImplementedError
+def insert_search(**search_kwargs):
+    sql = "INSET INTO sciencedirect.searchs ( "
+    val = []
+    search_values = []
+    for key, value in search_kwargs.items():
+        if value:
+            val.append(key)
+            sql += key
+            search_values.append(value)
+    sql += ') VALUES ('
+    for search_value in search_values:
+        val.append(search_value)
+        sql += search_value
+    sql += ');'
+    print(sql)
+    cursor.execute(sql, val)
 
 
 def connect_search_article():
@@ -98,6 +113,31 @@ def update_author_scopus(name, id):
 
 # SELECT
 
+def get_search_suggest(**search_kwargs):
+    sql = "SELECT * FROM sciencedirect.searchs WHERE "
+    val = []
+    for key, value in search_kwargs.items():
+        if value:
+            val.append(key)
+            val.append(value)
+            sql += '%s LIKE %s AND '
+    sql = sql[:-5]
+    print(sql)
+    cursor.execute(sql, val)
+    return cursor.fetchall()
+
+def get_search(**search_kwargs):
+    sql = "SELECT * FROM sciencedirect.searchs WHERE "
+    val = []
+    for key, value in search_kwargs.items():
+        if value:
+            val.append(key)
+            val.append(value)
+            sql += '%s = %s AND '
+    sql = sql[:-5]
+    print(sql)
+    cursor.execute(sql, val)
+    return cursor.fetch()    
 
 def is_row_exist(table, column, value):
     sql = "SELECT EXISTS(SELECT 1 FROM %s WHERE %s='%s' LIMIT 1)"

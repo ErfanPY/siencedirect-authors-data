@@ -311,9 +311,9 @@ class Search_page (Page):
         if not url:
             #url = f'https://www.sciencedirect.com/search?qs={title}&date={url}&authors={author}&affiliations={affiliation}&show={show_per_page}'
             url = 'https://www.sciencedirect.com/search?'
-            for key in search_kwargs.keys():
-                if search_kwargs[key]:
-                    url += '{}={}&'.format(key, search_kwargs[key])
+            for key, value in search_kwargs.items():
+                if value:
+                    url += '{}={}&'.format(key, value)
             url += 'show={}&'.format(show_per_page)
             print(url)
         logger.debug('[ Search_page ] __init__ | url: %s', url)
