@@ -67,6 +67,7 @@ def connect_search_article(search_id, article_id):
         '[ database ] search and article connected | search_id: %s  article_id: %s', search_id, article_id)
 
 def insert_search(search_hash, **search_kwargs):
+    logger.debug('[database_util][insert_search][IN] | search_hash : %s, search_kwargs : %s', search_hash, search_kwargs)
     sql = "INSET INTO sciencedirect.searchs (hash, date, qs, pub, authors, affiliation, volume, issue, page, tak, title, refrences, docId) VALUES ("
     val = []
     key_list = ['date', 'qs', 'pub', 'authors', 'affiliation', 'volume', 'issue', 'page', 'tak', 'title', 'refrences', 'docId']
@@ -81,7 +82,7 @@ def insert_search(search_hash, **search_kwargs):
         value = search_kwargs.get(key, '')
         value = value if value != None else ''
         val.append(value)
-    print('insert_search', sql, val)
+    logger.debug('[database_util][insert_search][OUT] | sql : %s, val : %s', sql, val)
     cursor.execute(sql, val)
 
 
@@ -130,6 +131,7 @@ def update_search_offset(offset, hash):
 # SELECT
 
 def get_search_suggest(**search_kwargs):
+    logger.debug('[database_util][get_search_suggest][IN] | search_kwargs : %s', search_kwargs)
     sql = "SELECT * FROM sciencedirect.searchs WHERE "
     val = []
     for key, value in search_kwargs.items():
@@ -139,9 +141,10 @@ def get_search_suggest(**search_kwargs):
             sql += '%s LIKE %s AND '
     sql = sql[:-5]
     sql += ';'
-    print('get_search_suggest', sql)
     cursor.execute(sql, val)
-    return cursor.fetchall()
+    fetch_res = cursor.fetchall()
+    logger.debug('[database_util][get_search_suggest][OUT] | search_kwargs : %s, fetch_res : %s', search_kwargs, fetch_res)
+    return fetch_res
 
 
 def get_search(search_hash):

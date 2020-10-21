@@ -6,7 +6,7 @@ import threading
 import logging
 
 from .class_util import Article, Search_page, Author
-from .database_util import (insert_article_data, insert_search, 
+from .database_util import (insert_article_data, insert_search,
                             get_id_less_authors, get_search, update_author_scopus,
                             update_search_offset)
 from flask import Flask
@@ -28,8 +28,10 @@ celery.conf.update(app.config)
 
 @celery.task(bind=True, name='scopus_search')
 def scopus_search(self):
+    logger.debug('[get_sd_ou][scopus_search][IN] | ')
     logger.debug('[Scopus_search] started')
     names = get_id_less_authors()
+    count = 0
 
     for name in names:
         last, first = name.split('|')
@@ -37,20 +39,28 @@ def scopus_search(self):
         logger.debug(f'getting scopus | name:{name}')
         author = Author(**name, do_scopus=True)
         update_author_scopus(name=author['name'], id=author['id'])
+        count += 1
+
+    logger.debug('[get_sd_ou][scopus_search][OUT] | authors_count : %s', count)
 
 
 def get_next_page(queue_id='', **search_kwargs):
+    logger.debug(
+        '[get_sd_ou][get_next_page][IN] | search_kwargs : %s', search_kwargs)
+    count = 0
     while True:
         search_obj = Search_page(**search_kwargs)
         while search_obj:
             res = {'search_page': search_obj, 'index_current_page': search_obj.curent_page_num,
                    'page_count': search_obj.pages_count}
+            count += 1
+            logger.debug('[get_sd_ou][get_next_page][RETURN] | res : %s', res)
             yield res
             search_obj = search_obj.next_page()
         if not search_kwargs.get('date'):
             break
         search_kwargs['date'] = str(int(search_kwargs.get('date')) - 1)
-
+    logger.debug('[get_sd_ou][get_next_page][OUT] | count : %s', count)
     return {'result': 'done', 'index_current_page': search_obj.curent_page_num, 'page_count': search_obj.pages_count}
 
 
@@ -63,22 +73,27 @@ def get_next_article(search_page):
 
 
 def get_prev_serach_offset(**search_kwargs):
+    logger.debug('[get_sd_ou][get_prev_serach_offset][IN] | search_kwargs : %s', search_kwargs)
     search_hash = Search_page(**search_kwargs).db_hash()
     search = get_search(search_hash)
     if not search:
         search_kwargs['offset'] = 0
-        insert_search(search_hash = search_hash, **search_kwargs)
+        insert_search(search_hash=search_hash, **search_kwargs)
         return 0
+    logger.debug('[get_sd_ou][get_prev_serach_offset][OUT] continue saved search | offset : %s', search['offset'])
     return search['offset']
 
 
 @celery.task(bind=True, name='start_search')
 def start_search(self, **search_kwargs):
+    logger.debug('[get_sd_ou][start_search][IN] | search_kwargs : %s', search_kwargs)
     search_kwargs['offset'] = get_prev_serach_offset(**search_kwargs)
     first_page = True
+    count = 0
+
     for page_res in get_next_page(**search_kwargs):
         page, index_current_page, pages_count = page_res.values()
-        if not first_page :
+        if not first_page:
             update_search_offset(hash=page.db_hash(), offset=page.offset)
         self.update_state(state='PROGRESS',
                           meta={'current': index_current_page, 'total': pages_count,
@@ -92,8 +107,10 @@ def start_search(self, **search_kwargs):
             self.update_state(state='PROGRESS',
                               meta={'current': index_current_page, 'total': pages_count,
                                     'status': f'{index_current_article}/{articles_count} \n {article.url}'})
+            count += 1
             time.sleep(0.1)
         first_page = False
+    logger.debug('[get_sd_ou][start_search][OUT] | count : %s', count)
 
 def init_queue():
     global main_queue
