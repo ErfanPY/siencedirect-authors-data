@@ -21,10 +21,10 @@ cursor = cnx.cursor(buffered=True)
 # INSERT
 
 
-def insert_article(pii, title=''):
+def insert_article(pii, title='', bibtex='', **kwargs):
     # update = UPDATE articles SET title=%S
-    sql = "INSERT IGNORE INTO sciencedirect.articles (pii, title) VALUES (%s, %s);"
-    val = (pii, title)
+    sql = "INSERT IGNORE INTO sciencedirect.articles (pii, title, bibtex) VALUES (%s, %s, %s);"
+    val = (pii, title, bibtex)
     cursor.execute(sql, val)
     cnx.commit()
     article_id = cursor.lastrowid
@@ -68,10 +68,12 @@ def connect_search_article(search_id, article_id):
 
 def insert_search(search_hash, **search_kwargs):
     logger.debug('[database_util][insert_search][IN] | search_hash : %s, search_kwargs : %s', search_hash, search_kwargs)
-    sql = "INSET INTO sciencedirect.searchs (hash, date, qs, pub, authors, affiliation, volume, issue, page, tak, title, refrences, docId) VALUES ("
+    sql = "INSERT INTO sciencedirect.searchs (hash, date, qs, pub, authors, affiliation, volume, issue, page, tak, title, refrences, docId) VALUES ("
     val = []
     key_list = ['date', 'qs', 'pub', 'authors', 'affiliation', 'volume', 'issue', 'page', 'tak', 'title', 'refrences', 'docId']
+    
     val.append(search_hash)
+    sql += '%s, '
     
     for _ in key_list:
         sql += '%s, '
@@ -82,9 +84,10 @@ def insert_search(search_hash, **search_kwargs):
         value = search_kwargs.get(key, '')
         value = value if value != None else ''
         val.append(value)
-    logger.debug('[database_util][insert_search][OUT] | sql : %s, val : %s', sql, val)
     cursor.execute(sql, val)
-
+    search_id = cursor.lastrowid
+    logger.debug('[database_util][insert_search][OUT] | sql : %s, val : %s', sql, val)
+    return search_id 
 
 def insert_multi_author(authors_list):
     authors_id = []
@@ -103,6 +106,7 @@ def insert_article_data(pii, authors, **kwargs):
 
     authors_id = insert_multi_author(authors)
     connect_multi_article_authors(article_id, authors_id)
+    return article_id
 
 # UPDATE
 
@@ -148,10 +152,13 @@ def get_search_suggest(**search_kwargs):
 
 
 def get_search(search_hash):
+    logger.debug('[database_util][get_search][IN] | search_hash : %s', search_hash)
     sql = "SELECT * FROM sciencedirect.searchs WHERE hash = %s"
     
-    cursor.execute(sql, (hash, ))
-    return cursor.fetchone()
+    cursor.execute(sql, (search_hash, ))
+    fetch_res = cursor.fetchone()
+    logger.debug('[database_util][get_search][OUT] | fetch_res : %s', fetch_res)
+    return fetch_res
 
 
 def is_row_exist(table, column, value):

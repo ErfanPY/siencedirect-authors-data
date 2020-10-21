@@ -78,16 +78,16 @@ def get_prev_serach_offset(**search_kwargs):
     search = get_search(search_hash)
     if not search:
         search_kwargs['offset'] = 0
-        insert_search(search_hash=search_hash, **search_kwargs)
-        return 0
-    logger.debug('[get_sd_ou][get_prev_serach_offset][OUT] continue saved search | offset : %s', search['offset'])
-    return search['offset']
+        search_id = insert_search(search_hash=search_hash, **search_kwargs)
+        search = [search_id, 0]
+    logger.debug('[get_sd_ou][get_prev_serach_offset][OUT] continue saved search | search_id : %s, offset : %s', search[0], search[-1])
+    return search[0] , search[-1]
 
 
 @celery.task(bind=True, name='start_search')
 def start_search(self, **search_kwargs):
     logger.debug('[get_sd_ou][start_search][IN] | search_kwargs : %s', search_kwargs)
-    search_kwargs['offset'] = get_prev_serach_offset(**search_kwargs)
+    search_id, search_kwargs['offset'] = get_prev_serach_offset(**search_kwargs)
     first_page = True
     count = 0
 
@@ -103,7 +103,8 @@ def start_search(self, **search_kwargs):
         for article_res in get_next_article(page):
             article, index_current_article, articles_count = article_res.values()
             article_data = article.get_article_data()
-            insert_article_data(**article_data)
+            article_id = insert_article_data(**article_data)
+            connect_search_article(search_id, article_id)
             self.update_state(state='PROGRESS',
                               meta={'current': index_current_page, 'total': pages_count,
                                     'status': f'{index_current_article}/{articles_count} \n {article.url}'})
