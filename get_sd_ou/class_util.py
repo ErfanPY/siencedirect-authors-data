@@ -327,10 +327,10 @@ class Search_page (Page):
         self.show_per_page = show_per_page
         self.offset = self.query.get('offset', '0')
 
-    def __hash__(self):
+    def db_hash(self):
         search_kwargs = self.search_kwargs
         search_kwargs['offset'] = 0
-        sha1(json.dumps(search_kwargs, sort_keys=True, ensure_ascii=False).encode('utf-8')).hexdigest()
+        return sha1(json.dumps(search_kwargs, sort_keys=True, ensure_ascii=False).encode('utf-8')).hexdigest()
         
     def __bool__(self):
         return self.url != ''

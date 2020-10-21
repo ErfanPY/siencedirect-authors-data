@@ -63,10 +63,11 @@ def get_next_article(search_page):
 
 
 def get_prev_serach_offset(**search_kwargs):
-    search = get_search(**search_kwargs)
+    search_hash = Search_page(**search_kwargs).db_hash()
+    search = get_search(search_hash)
     if not search:
         search_kwargs['offset'] = 0
-        insert_search(**search_kwargs)
+        insert_search(search_hash = search_hash, **search_kwargs)
         return 0
     return search['offset']
 
@@ -76,9 +77,9 @@ def start_search(self, **search_kwargs):
     search_kwargs['offset'] = get_prev_serach_offset(**search_kwargs)
     first_page = True
     for page_res in get_next_page(**search_kwargs):
-        if not first_page :
-            update_search_offset(hash=hash(page_res), offset=page_res.offset)
         page, index_current_page, pages_count = page_res.values()
+        if not first_page :
+            update_search_offset(hash=page.db_hash(), offset=page.offset)
         self.update_state(state='PROGRESS',
                           meta={'current': index_current_page, 'total': pages_count,
                                 'status': f'Getting page articles\n{page.url}'})

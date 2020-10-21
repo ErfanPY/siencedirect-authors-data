@@ -67,21 +67,22 @@ def connect_search_article(search_id, article_id):
         '[ database ] search and article connected | search_id: %s  article_id: %s', search_id, article_id)
 
 def insert_search(search_hash, **search_kwargs):
-    sql = "INSET INTO sciencedirect.searchs (hash, date, qs, pub, authors, affiliation, volume, issue, page, tak, titile, refrences, docId) VALUES ("
+    sql = "INSET INTO sciencedirect.searchs (hash, date, qs, pub, authors, affiliation, volume, issue, page, tak, title, refrences, docId) VALUES ("
     val = []
-    key_list = ['date', 'qs', 'pub', 'authors', 'affiliation', 'volume', 'issue', 'page', 'tak', 'titile', 'refrences', 'docId']
+    key_list = ['date', 'qs', 'pub', 'authors', 'affiliation', 'volume', 'issue', 'page', 'tak', 'title', 'refrences', 'docId']
     val.append(search_hash)
     
     for _ in key_list:
         sql += '%s, '
-    sql = sql[:-3]
+    sql = sql[:-2]
     sql += ');'
 
     for key in key_list:
-        val.append(search_kwargs.get(key, ''))
-    print(sql, val)
-    #cursor.execute(sql, val)
-    raise NotImplementedError
+        value = search_kwargs.get(key, '')
+        value = value if value != None else ''
+        val.append(value)
+    print('insert_search', sql, val)
+    cursor.execute(sql, val)
 
 
 def insert_multi_author(authors_list):
@@ -137,30 +138,24 @@ def get_search_suggest(**search_kwargs):
             val.append(value)
             sql += '%s LIKE %s AND '
     sql = sql[:-5]
-    print(sql)
+    sql += ';'
+    print('get_search_suggest', sql)
     cursor.execute(sql, val)
     return cursor.fetchall()
 
 
-def get_search(**search_kwargs):
-    sql = "SELECT * FROM sciencedirect.searchs WHERE "
-    val = []
-    for key, value in search_kwargs.items():
-        if value:
-            val.append(key)
-            val.append(value)
-            sql += '%s = %s AND '
-    sql = sql[:-5]
-    print(sql)
-    cursor.execute(sql, val)
-    return cursor.fetch()
+def get_search(search_hash):
+    sql = "SELECT * FROM sciencedirect.searchs WHERE hash = %s"
+    
+    cursor.execute(sql, (hash, ))
+    return cursor.fetchone()
 
 
 def is_row_exist(table, column, value):
     sql = "SELECT EXISTS(SELECT 1 FROM %s WHERE %s='%s' LIMIT 1)"
     val = (table, column, value)
     cursor.execute(sql, val)
-    result = cursor.fetch()
+    result = cursor.fetchone()
     return result
 
 
