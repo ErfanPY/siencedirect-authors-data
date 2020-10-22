@@ -19,12 +19,16 @@
         <p>
             <div class="row">
                 <div class="column">
-                    {{ form.qs.label }}<br> {{ form.qs }}<br> {{ form.pub.label }}<br> {{ form.pub }}<br> {{ form.authors.label }}<br> {{ form.authors }}<br> {{ form.affiliation.label }}<br> {{ form.affiliation }}<br> {{ form.volume.label
+                    {{ form.qs.label }}<br> {{ form.qs }}<br> {{ form.pub.label }}<br> {{ form.pub }}<br>
+                    {{ form.authors.label }}<br> {{ form.authors }}<br> {{ form.affiliation.label }}<br>
+                    {{ form.affiliation }}<br> {{ form.volume.label
                     }}
                     <br> {{ form.volume }}<br> {{ form.issue.label }}<br> {{ form.issue }}
                 </div>
                 <div class="column">
-                    {{ form.page.label }}<br> {{ form.page }}<br> {{ form.tak.label }}<br> {{ form.tak }}<br> {{ form.title.label }}<br> {{ form.title }}<br> {{ form.refrences.label }}<br> {{ form.refrences }}<br> {{ form.docId.label }}<br> {{
+                    {{ form.page.label }}<br> {{ form.page }}<br> {{ form.tak.label }}<br> {{ form.tak }}<br>
+                    {{ form.title.label }}<br> {{ form.title }}<br> {{ form.refrences.label }}<br>
+                    {{ form.refrences }}<br> {{ form.docId.label }}<br> {{
                     form.docId }}
                 </div>
             </div>
@@ -53,11 +57,11 @@
                 type: 'POST',
                 url: '/longtask',
                 data: form.serialize(),
-                success: function(data, status, request) {
+                success: function (data, status, request) {
                     status_url = request.getResponseHeader('Location');
                     update_progress(status_url, nanobar, div[0]);
                 },
-                error: function() {
+                error: function () {
                     alert('Unexpected error');
                 }
             });
@@ -68,11 +72,11 @@
             $.ajax({
                 type: 'POST',
                 url: '/scopus_search',
-                success: function(data, status, request) {
+                success: function (data, status, request) {
                     status_url = request.getResponseHeader('Location');
                     update_scopus_progress(status_url);
                 },
-                error: function() {
+                error: function () {
                     alert('Unexpected error');
                 }
             });
@@ -81,15 +85,15 @@
         function update_scopus_progress(status_url) {
             // send GET request to status URL
 
-            $.getJSON(status_url, function(data) {
+            $.getJSON(status_url, function (data) {
                 $('#scopus_search_progress').text(data['status']);
-                setTimeout(function() {
+                setTimeout(function () {
                     update_scopus_progress(status_url);
                 }, 2000);
             });
         }
 
-        $("#start_form").submit(function(e) {
+        $("#start_form").submit(function (e) {
             e.preventDefault(); // avoid to execute the actual submit of the form.
             console.log($('#start_form').serialize());
             var form = $(this);
@@ -102,12 +106,13 @@
         function update_progress(status_url, nanobar, status_div) {
             // send GET request to status URL
             console.log('UPDATE')
-            $.getJSON(status_url, function(data) {
+            $.getJSON(status_url, function (data) {
                 // update UI
                 percent = parseInt(data['current'] * 100 / data['total']);
                 nanobar.go(percent);
                 console.log('GO')
-                $(status_div.childNodes[1]).text(percent + '%' + '( ' + data['current'] + '/' + data['total'] + ' )');
+                $(status_div.childNodes[1]).text(percent + '%' + '( ' + data['current'] + '/' + data['total'] +
+                    ' )');
                 $(status_div.childNodes[2]).text(data['status']);
                 if (data['state'] != 'PENDING' && data['state'] != 'PROGRESS') {
                     if ('result' in data) {
@@ -119,7 +124,7 @@
                     }
                 } else {
                     // rerun in 2 seconds
-                    setTimeout(function() {
+                    setTimeout(function () {
                         update_progress(status_url, nanobar, status_div);
                     }, 2000);
                 }

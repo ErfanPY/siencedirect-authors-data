@@ -63,8 +63,11 @@
                 var input = this;
                 var key = this.id;
                 var input_value = this.value;
-		var data_s = {'key':key, "value":input_value}
-		console.log(key, input_value, data_s);
+                var data_s = {
+                    'key': key,
+                    "value": input_value
+                }
+                console.log(key, input_value, data_s);
                 $.ajax({
                     type: 'POST',
                     url: '/db_suggest',
@@ -85,6 +88,33 @@
             });
         });
 
+        function start_search(form) {
+            div = $('<div class="result"><div></div><div>&nbsp;</div></div><hr>');
+            $('#result').append(div);
+            document.getElementById('result').scrollIntoView();
+            status_div = div[0];
+            // send ajax POST request to start background job
+            console.log(form.serialize())
+            $.ajax({
+                type: 'POST',
+                url: '/db_start_search',
+                data: form.serialize(),
+                success: function (data) {
+                    $(status_div.childNodes[0]).text(data);
+                },
+                error: function () {
+                    alert('Unexpected error');
+                }
+            });
+        }
+
+        $("#start_form").submit(function (e) {
+            e.preventDefault(); // avoid to execute the actual submit of the form.
+            console.log($('#start_form').serialize());
+            var form = $(this);
+
+            start_search(form)
+        });
         // function update_suggestions(data) {
         //     Object.entries(data).forEach(([key, value]) => {
         //         var input = document.getElementById(key);

@@ -9,7 +9,8 @@ from celery import Celery
 import time
 import logging
 from get_sd_ou import get_sd_ou
-from get_sd_ou.database_util import get_search_suggest
+from get_sd_ou.database_util import get_search_suggest, get_search
+from get_sd_ou.class_util import Search_page
 logger = logging.getLogger('mainLogger')
 logger.debug('[app] INIT')
 app = Flask(__name__)
@@ -84,6 +85,28 @@ def db_search():
     form = StartForm()
     return render_template('db_search.html', form=form)
 
+@app.route('/db_start_search', methods=['POST'])
+def db_start_search():
+    form = StartForm()
+    logger.debug('[app] starting task')
+    kwargs = {
+        'date': form.date.data,
+        'qs': form.qs.data,
+        'pub': form.pub.data,
+        'authors': form.authors.data,
+        'affiliations': form.affiliation.data,
+        'volume': form.volume.data,
+        'issue': form.issue.data,
+        'page': form.page.data,
+        'tak': form.tak.data,
+        'title': form.title.data,
+        'refrences': form.refrences.data,
+        'docId': form.docId.data
+    }
+    kwargs['offset'] = 0
+    search_hash = Seaech_page(**kwargs).db_hash()
+    database_result = get_search(search_hash)
+    return str(database_result)
 
 @app.route('/db_suggest', methods=['POST'])
 def db_suggest():
