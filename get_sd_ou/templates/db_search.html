@@ -6,8 +6,9 @@
         float: left;
         width: 50%;
     }
+
     /* Clear floats after the columns */
-    
+
     .row:after {
         content: "";
         display: table;
@@ -31,54 +32,87 @@
         <p>
             <div class="row">
                 <div class="column">
-                    {{ form.qs.label }}<br> {{ form.qs(class_="form-input") }}<br> {{ form.pub.label }}<br> {{ form.pub(class_="form-input") }}<br> {{ form.authors.label }}<br> {{ form.authors(class_="form-input") }}<br> {{ form.affiliation.label
+                    {{ form.qs.label }}<br> {{ form.qs(class_="form-input") }}<br> {{ form.pub.label }}<br>
+                    {{ form.pub(class_="form-input") }}<br> {{ form.authors.label }}<br>
+                    {{ form.authors(class_="form-input") }}<br> {{ form.affiliation.label
                     }}
                     <br> {{ form.affiliation(class_="form-input") }}<br> {{ form.volume.label }}
-                    <br> {{ form.volume(class_="form-input") }}<br> {{ form.issue.label }}<br> {{ form.issue(class_="form-input") }}
+                    <br> {{ form.volume(class_="form-input") }}<br> {{ form.issue.label }}<br>
+                    {{ form.issue(class_="form-input") }}
                 </div>
                 <div class="column">
-                    {{ form.page.label }}<br> {{ form.page(class_="form-input") }}<br> {{ form.keywords.label }}<br> {{ form.keywords(class_="form-input") }}<br> {{ form.title.label }}<br> {{ form.title(class_="form-input") }}<br> {{ form.refrences.label
+                    {{ form.page.label }}<br> {{ form.page(class_="form-input") }}<br> {{ form.keywords.label }}<br>
+                    {{ form.keywords(class_="form-input") }}<br> {{ form.title.label }}<br>
+                    {{ form.title(class_="form-input") }}<br> {{ form.refrences.label
                     }}
-                    <br> {{ form.refrences(class_="form-input") }}<br> {{ form.docId.label }}<br> {{ form.docId(class_="form-input") }}
+                    <br> {{ form.refrences(class_="form-input") }}<br> {{ form.docId.label }}<br>
+                    {{ form.docId(class_="form-input") }}
                 </div>
             </div>
         </p>
         <p>{{ form.submit() }}</p>
     </form>
+    <button onclick="$('#start_form')[0].reset();">CLEAR</button>
     <hr>
     <h2>Search results</h2>
 
     <div id="result"></div>
     <script>
-        function update_suggestions(data) {
-            Object.entries(data).forEach(([key, value]) => {
-                var input = document.getElementById(key);
-		if (Array.isArray(value) && value.length){
-			console.log(value)
-                	aws = new Awesomplete(input, {list: value, maxItems: 3, tabSelect: true, filter:function(text, input){return true;}});
-		}
-                }
-            )
-        };
-
-        $(document).ready(function() {
-            $('#start_form')[0].reset();
-            $(".form-input").keyup(function() {
-                form = $("#start_form")
+        $(document).ready(function () {
+            $(".form-input").keyup(function () {
+                var input = this;
+                var key = this.attr('id');
+                var input_value = this.value;
                 $.ajax({
                     type: 'POST',
                     url: '/db_suggest',
-                    data: form.serialize(),
-                    success: function(data) {
-                        console.log(form.serialize(), data);
-                        update_suggestions(data);
+                    data: Array(key, input_value),
+                    success: function (suggestion_json) {
+                        console.log(suggestion_json);
+                        var suggestion_list = JSON.parse(suggestion_json).suggestion_list
+                        new Awesomplete(input, {
+                            list: suggestion_list,
+                            minChars: 0,
+                            tabSelect: true
+                        });
+
                     },
-                    error: function() {
+                    error: function () {
                         alert('Unexpected error');
                     }
                 });
             });
         });
+
+        // function update_suggestions(data) {
+        //     Object.entries(data).forEach(([key, value]) => {
+        //         var input = document.getElementById(key);
+        // if (Array.isArray(value) && value.length){
+        // 	console.log(value)
+        //         	aws = new Awesomplete(input, {list: value, maxItems: 3, tabSelect: true, filter:function(text, input){return true;}});
+        // }
+        //         }
+        //     )
+        // };
+
+        // $(document).ready(function() {
+        //     $('#start_form')[0].reset();
+        //     $(".form-input").keyup(function() {
+        //         form = $("#start_form")
+        //         $.ajax({
+        //             type: 'POST',
+        //             url: '/db_suggest',
+        //             data: form.serialize(),
+        //             success: function(data) {
+        //                 console.log(form.serialize(), data);
+        //                 update_suggestions(data);
+        //             },
+        //             error: function() {
+        //                 alert('Unexpected error');
+        //             }
+        //         });
+        //     });
+        // });
     </script>
 </body>
 {% endblock %}
