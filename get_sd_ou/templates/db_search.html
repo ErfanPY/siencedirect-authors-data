@@ -37,7 +37,7 @@
                     <br> {{ form.volume(class_="form-input") }}<br> {{ form.issue.label }}<br> {{ form.issue(class_="form-input") }}
                 </div>
                 <div class="column">
-                    {{ form.page.label }}<br> {{ form.page(class_="form-input") }}<br> {{ form.tak.label }}<br> {{ form.tak(class_="form-input") }}<br> {{ form.title.label }}<br> {{ form.title(class_="form-input") }}<br> {{ form.refrences.label
+                    {{ form.page.label }}<br> {{ form.page(class_="form-input") }}<br> {{ form.keywords.label }}<br> {{ form.keywords(class_="form-input") }}<br> {{ form.title.label }}<br> {{ form.title(class_="form-input") }}<br> {{ form.refrences.label
                     }}
                     <br> {{ form.refrences(class_="form-input") }}<br> {{ form.docId.label }}<br> {{ form.docId(class_="form-input") }}
                 </div>
@@ -55,7 +55,7 @@
                 var input = document.getElementById(key);
 		if (Array.isArray(value) && value.length){
 			console.log(value)
-                	aws = new Awesomplete(input, {list: value, maxItems: 3, tabSelect: true, filter:function(text, input){return true;}});
+                	new Awesomplete(input, {list: value, maxItems: 3, tabSelect: true, filter:function(text, input){return true;}});
 	                aws.open();
 		}
                 }
