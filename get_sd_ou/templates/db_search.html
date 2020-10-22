@@ -61,19 +61,20 @@
         $(document).ready(function () {
             $(".form-input").keyup(function () {
                 var input = this;
-                var key = this.attr('id');
+                var key = this.id;
                 var input_value = this.value;
+		var data_s = {'key':key, "value":input_value}
+		console.log(key, input_value, data_s);
                 $.ajax({
                     type: 'POST',
                     url: '/db_suggest',
-                    data: Array(key, input_value),
+                    data: data_s,
                     success: function (suggestion_json) {
                         console.log(suggestion_json);
-                        var suggestion_list = JSON.parse(suggestion_json).suggestion_list
+                        var suggestion_list = suggestion_json.suggestion_list
                         new Awesomplete(input, {
                             list: suggestion_list,
-                            minChars: 0,
-                            tabSelect: true
+                            minChars: 1,
                         });
 
                     },
