@@ -93,8 +93,9 @@ def db_suggest():
         res[key] = []
     for suggest in suggests:
         for key, value in suggest.items():
-            print('db_sugg####', key, value)
-            if value and not form.get(key, False) and key in form:
+            form_value = form.get(key, False)
+            print('db_sugg####', key,"|", value,'|', not form_value , "|", form_value == ' ' ,"|", key in form)
+            if value and key in form and value != form_value and value != ' ':
                 res[key].append(value)
 
     logger.debug('[app][db_suggest][OUT] | res : %s', res)

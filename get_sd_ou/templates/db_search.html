@@ -55,8 +55,7 @@
                 var input = document.getElementById(key);
 		if (Array.isArray(value) && value.length){
 			console.log(value)
-                	new Awesomplete(input, {list: value, maxItems: 3, tabSelect: true, filter:function(text, input){return true;}});
-	                aws.open();
+                	aws = new Awesomplete(input, {list: value, maxItems: 3, tabSelect: true, filter:function(text, input){return true;}});
 		}
                 }
             )
