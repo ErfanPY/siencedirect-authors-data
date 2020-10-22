@@ -1,3 +1,19 @@
+#REDIS
+docker run --name myredis -p 6379:6379 redis redis-server --save "" --port 6379
+redis-cli monitor #For logs
+#MYSQL
+sudo apt install mysql-server
+sudo mysql_secure_installation
+mysql -uroot -proot < sciencedirect_complete_clear.sql 
+
+#CELERY
+celery -A get_sd_ou.get_sd_ou.celery worker -Q main_search --loglevel=INFO -E
+celery -A get_sd_ou.get_sd_ou.celery worker -Q scopus_search --loglevel=INFO -E
+
+#PYTHON
+python3 -m get_sd_ou.app
+
+#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#
 nohup python -u ./test.py > output.log &
 celery -A get_sd_ou.get_sd_ou.celery worker --loglevel=INFO --detach
 docker run -d --name some-redis -p 6379:6379 redis

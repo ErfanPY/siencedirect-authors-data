@@ -13,7 +13,7 @@
     <form id="start_form" method="POST">
         {{ form.hidden_tag() }}
         <p>
-            {{ form.start_year.label }}<br> {{ form.start_year }} {% for error in form.start_year.errors %}
+            {{ form.date.label }}<br> {{ form.date }} {% for error in form.date.errors %}
             <span style="color: red;">[{{ error }}]</span> {% endfor %}
         </p>
         <p>
