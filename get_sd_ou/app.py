@@ -88,7 +88,10 @@ def db_search():
 @app.route('/db_suggest', methods=['POST'])
 def db_suggest():
     logger.debug('[app][db_suggest][IN]')
-    input_key, input_value = list(request.data)
+    print(request.data)
+    inp = request.form.to_dict()
+    input_key = inp['key']
+    input_value = inp['value']
     print('###', input_key, input_value)
     suggestion_list = get_search_suggest(input_key, input_value)
 

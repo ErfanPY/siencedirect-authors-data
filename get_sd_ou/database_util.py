@@ -136,11 +136,11 @@ def update_search_offset(offset, hash):
 # SELECT
 
 def get_search_suggest(input_key, input_value):
-    cursor = cnx.cursor(buffered=True)
     logger.debug('[database_util][get_search_suggest][IN] | input_key : %s, input_value : %s', input_key, input_value)
-    sql = "SELECT " + str(input_key) + "FROM sciencedirect.searchs WHERE " + str(input_key) + " LIKE %s;"
-    cursor.execute(sql, (input_value, ))
-    fetch_res = cursor.fetchall()
+    sql = "SELECT " + str(input_key) + " FROM sciencedirect.searchs WHERE " + str(input_key) + " LIKE %s;"
+    print(sql)
+    cursor.execute(sql, ('%'+input_value+'%', ))
+    fetch_res = list(set(cursor.fetchall()))
     logger.debug('[database_util][get_search_suggest][OUT] | input_key : %s, input_value : %s, fetch_res : %s',  input_key, input_value, fetch_res)
     return fetch_res
 
