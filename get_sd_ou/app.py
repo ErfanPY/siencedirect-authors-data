@@ -39,11 +39,13 @@ class StartForm(FlaskForm):
     docId = StringField('ISSN or ISBN')
     submit = SubmitField('Start')
 
+
 @app.route('/scopus_search', methods=['POST'])
 def scopus_search():
     task = get_sd_ou.scopus_search.apply_async(queue="scopus_search")
     return jsonify({}), 202, {'Location': url_for('scopus_status',
                                                   task_id=task.id)}
+
 
 @app.route('/scopus_status/<task_id>')
 def scopus_status(task_id):
@@ -76,6 +78,7 @@ def scopus_status(task_id):
 
     return jsonify(response)
 
+
 @app.route('/db_search')
 def db_search():
     form = StartForm()
@@ -84,6 +87,17 @@ def db_search():
 
 @app.route('/db_suggest', methods=['POST'])
 def db_suggest():
+    logger.debug('[app][db_suggest][IN]')
+    input_key, input_value = list(request.data)
+    print('###', input_key, input_value)
+    suggestion_list = get_search_suggest(input_key, input_value)
+
+    logger.debug('[app][db_suggest][OUT] | suggestion_list : %s', suggestion_list)
+    return jsonify({'suggestion_list':suggestion_list})
+
+
+@app.route('/db_suggest_all', methods=['POST'])
+def db_suggest_all():
     logger.debug('[app][db_suggest][IN]')
     form = dict(request.form)
     del form['csrf_token']
@@ -94,12 +108,14 @@ def db_suggest():
     for suggest in suggests:
         for key, value in suggest.items():
             form_value = form.get(key, False)
-            print('db_sugg####', key,"|", value,'|', not form_value , "|", form_value == ' ' ,"|", key in form)
+            print('db_sugg####', key, "|", value, '|', not form_value,
+                  "|", form_value == ' ', "|", key in form)
             if value and key in form and value != form_value and value != ' ':
                 res[key].append(value)
 
     logger.debug('[app][db_suggest][OUT] | res : %s', res)
     return jsonify(res)
+
 
 @app.route('/longtask', methods=['POST'])
 def longtask():
@@ -121,7 +137,8 @@ def longtask():
         'docId': form.docId.data
     }
     kwargs['offset'] = 0
-    task = get_sd_ou.start_search.apply_async(kwargs=kwargs, queue="main_search")
+    task = get_sd_ou.start_search.apply_async(
+        kwargs=kwargs, queue="main_search")
     print(kwargs)
     return jsonify({}), 202, {'Location': url_for('taskstatus',
                                                   task_id=task.id)}
