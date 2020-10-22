@@ -84,6 +84,7 @@ def db_search():
 
 @app.route('/db_suggest', methods=['POST'])
 def db_suggest():
+    logger.debug('[app][db_suggest][IN]')
     form = dict(request.form)
     del form['csrf_token']
     suggests = get_search_suggest(**form)
@@ -92,9 +93,11 @@ def db_suggest():
         res[key] = []
     for suggest in suggests:
         for key, value in suggest.items():
-            if value and not form[key] and key in form:
+            print('db_sugg####', key, value)
+            if value and not form.get(key, False) and key in form:
                 res[key].append(value)
 
+    logger.debug('[app][db_suggest][OUT] | res : %s', res)
     return jsonify(res)
 
 @app.route('/longtask', methods=['POST'])
