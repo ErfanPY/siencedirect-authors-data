@@ -52,10 +52,12 @@
     <script>
         function update_suggestions(data) {
             Object.entries(data).forEach(([key, value]) => {
-                value.insertAfter(document.getElementById(key))
                 var input = document.getElementById(key);
-                aws = new Awesomplete(input, {list: value, maxItems: 3, tabSelect: true, filter:function(text, input){return true;}});
-                aws.open()
+		if (Array.isArray(value) && value.length){
+			console.log(value)
+                	aws = new Awesomplete(input, {list: value, maxItems: 3, tabSelect: true, filter:function(text, input){return true;}});
+	                aws.open();
+		}
                 }
             )
         };
@@ -69,6 +71,7 @@
                     url: '/db_suggest',
                     data: form.serialize(),
                     success: function(data) {
+                        console.log(form.serialize(), data);
                         update_suggestions(data);
                     },
                     error: function() {
