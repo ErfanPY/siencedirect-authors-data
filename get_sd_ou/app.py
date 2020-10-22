@@ -104,7 +104,7 @@ def db_start_search():
         'docId': form.docId.data
     }
     kwargs['offset'] = 0
-    search_hash = Seaech_page(**kwargs).db_hash()
+    search_hash = Search_page(**kwargs).db_hash()
     database_result = get_search(search_hash)
     return str(database_result)
 
