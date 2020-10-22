@@ -135,14 +135,14 @@ def update_search_offset(offset, hash):
 # SELECT
 
 def get_search_suggest(**search_kwargs):
+    cursor = cnx.cursor(buffered=True, dictionary=True)
     logger.debug('[database_util][get_search_suggest][IN] | search_kwargs : %s', search_kwargs)
     sql = "SELECT * FROM sciencedirect.searchs WHERE "
     val = []
     for key, value in search_kwargs.items():
         if value:
-            val.append(key)
-            val.append(value)
-            sql += '%s LIKE %s AND '
+            val.append('%'+value+"%")
+            sql += key + ' LIKE %s AND '
     sql = sql[:-5]
     sql += ';'
     cursor.execute(sql, val)
