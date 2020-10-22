@@ -26,16 +26,16 @@ celery.conf.update(app.config)
 
 class StartForm(FlaskForm):
     date = StringField('years')
-    term = StringField('Search term')
-    pub_title = StringField('in jornal or book title ')
+    qs = StringField('Search term')
+    pub = StringField('in jornal or book title ')
     authors = StringField('authors')
     affiliation = StringField('affiliation')
     volume = IntegerField('volume')
     issue = IntegerField('issue')
     page = IntegerField('page')
-    keywords = StringField('Title, abstract or author-specified keywords')
+    tak = StringField('Title, abstract or author-specified keywords')
     title = StringField('title')
-    refrence = StringField('refrences')
+    refrences = StringField('refrences')
     docId = StringField('ISSN or ISBN')
     submit = SubmitField('Start')
 
@@ -107,16 +107,16 @@ def longtask():
     logger.debug('[app] starting task')
     kwargs = {
         'date': form.date.data,
-        'qs': form.term.data,
-        'pub': form.pub_title.data,
+        'qs': form.qs.data,
+        'pub': form.pub.data,
         'authors': form.authors.data,
         'affiliations': form.affiliation.data,
         'volume': form.volume.data,
         'issue': form.issue.data,
         'page': form.page.data,
-        'tak': form.keywords.data,
+        'tak': form.tak.data,
         'title': form.title.data,
-        'refrences': form.refrence.data,
+        'refrences': form.refrences.data,
         'docId': form.docId.data
     }
     kwargs['offset'] = 0
