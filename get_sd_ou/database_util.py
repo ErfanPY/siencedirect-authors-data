@@ -86,6 +86,7 @@ def insert_search(search_hash, **search_kwargs):
         val.append(value)
     cursor.execute(sql, val)
     search_id = cursor.lastrowid
+    cnx.commit()
     logger.debug('[database_util][insert_search][OUT] | sql : %s, val : %s', sql, val)
     return search_id 
 

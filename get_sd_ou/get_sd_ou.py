@@ -84,8 +84,21 @@ def get_prev_serach_offset(**search_kwargs):
         search = [search_id, 0]
     logger.debug('[get_sd_ou][get_prev_serach_offset][OUT] continue saved search | search_id : %s, offset : %s', search[0], search[-1])
     return search[0] , search[-1]
+def insert_random_search():
+    import random
+    aff = ['iran', 'china', 'US', 'UK', 'iraq']
+    date = ['2020', '1999', '2002', '2010', '2019']
+    term = ['nano', 'bio', 'data', 'game']
+    page = ['10', '20', '33']
+    auth = ['ali', 'erfan', 'bagher', 'sara']
+    for i in range(20):
+        a = random.choice(aff)
+        b = random.choice(date)
+        c = random.choice(term)
+        d = random.choice(page)
+        e  = random.choice(auth)
 
-
+        get_prev_serach_offset(**{'affiliation':a, 'date':b, 'qs':c, 'page':d, 'authors':e})
 @celery.task(bind=True, name='start_search')
 def start_search(self, **search_kwargs):
     logger.debug('[get_sd_ou][start_search][IN] | search_kwargs : %s', search_kwargs)
