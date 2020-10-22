@@ -36,7 +36,7 @@ class StartForm(FlaskForm):
     keywords = StringField('Title, abstract or author-specified keywords')
     title = StringField('title')
     refrence = StringField('refrences')
-    issn = StringField('ISSN or ISBN')
+    docId = StringField('ISSN or ISBN')
     submit = SubmitField('Start')
 
 @app.route('/scopus_search', methods=['POST'])
@@ -114,7 +114,7 @@ def longtask():
         'tak': form.keywords.data,
         'title': form.title.data,
         'refrences': form.refrence.data,
-        'docId': form.issn.data
+        'docId': form.docId.data
     }
     kwargs['offset'] = 0
     task = get_sd_ou.start_search.apply_async(kwargs=kwargs, queue="main_search")
