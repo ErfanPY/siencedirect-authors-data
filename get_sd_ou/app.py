@@ -25,7 +25,7 @@ celery.conf.update(app.config)
 
 
 class StartForm(FlaskForm):
-    start_year = StringField('years')
+    date = StringField('years')
     term = StringField('Search term')
     pub_title = StringField('in jornal or book title ')
     authors = StringField('authors')
@@ -103,7 +103,7 @@ def longtask():
     form = StartForm()
     logger.debug('[app] starting task')
     kwargs = {
-        'date': form.start_year.data,
+        'date': form.date.data,
         'qs': form.term.data,
         'pub': form.pub_title.data,
         'authors': form.authors.data,
