@@ -2,7 +2,7 @@ db/datadir/
 *.swp
 redis-stable*
 tmpt*
-.venv
+*venv
 .vscode
 *.log
 *.pyc
