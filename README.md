@@ -1,4 +1,4 @@
-Sciencedirect scraper :
+## Sciencedirect scraper :
 
 Search articles with given search parameters
 Get authors data from articles
@@ -16,7 +16,7 @@ mysql
 # Virtual environment
 virtualenv venv
 source ./venv/bin/activate
-
+pip install -r ./requirement.txt
 # REDIS
 docker run --name redis_serv -p 6379:6379 redis redis-server --save "" --port 6379
 
