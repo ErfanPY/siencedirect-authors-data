@@ -83,7 +83,7 @@ def get_prev_serach_offset(**search_kwargs):
         search_id = insert_search(search_hash=search_hash, **search_kwargs)
         search = [search_id, 0]
     logger.debug('[get_sd_ou][get_prev_serach_offset][OUT] continue saved search | search_id : %s, offset : %s', search[0], search[-1])
-    return search[0] , search[-1]
+    return search['search_id'] , search['offset']
 def insert_random_search():
     import random
     aff = ['iran', 'china', 'US', 'UK', 'iraq']

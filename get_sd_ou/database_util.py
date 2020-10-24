@@ -28,6 +28,8 @@ def insert_article(pii, title='', bibtex='', **kwargs):
     cursor.execute(sql, val)
     cnx.commit()
     article_id = cursor.lastrowid
+    if not article_id:
+        article_id = get_article(pii)['article_id']
     logger.debug(
         '[ database ] article inserted | pii: %s  id: %s', pii, article_id)
     return article_id
@@ -42,6 +44,8 @@ def insert_author(first_name, last_name, email='', affiliation='', is_coresponde
     cursor.execute(sql, val)
     cnx.commit()
     author_id = cursor.lastrowid
+    if not author_id:
+        author_id = get_auhtor(first_name, last_name)['author_id']
     logger.debug(
         '[ database ] author inserted | name: %s  id: %s', name, author_id)
     return author_id
@@ -53,8 +57,10 @@ def connect_article_author(article_id, author_id, is_corresponde=0):
     val = (article_id, author_id, is_corresponde)
     cursor.execute(sql, val)
     cnx.commit()
+    connection_id = cursor.lastrowid
     logger.debug(
-        '[ database ] article and author connected | article_id: %s  author_id: %s', article_id, author_id)
+        '[ database ] article and author connected | article_id: %s  author_id: %s, connection_id: %s', article_id, author_id, connection_id)
+    return connection_id
 
 
 def connect_search_article(search_id, article_id):
@@ -63,8 +69,10 @@ def connect_search_article(search_id, article_id):
     val = (search_id, article_id)
     cursor.execute(sql, val)
     cnx.commit()
+    connection_id = cursor.lastrowid
     logger.debug(
-        '[ database ] search and article connected | search_id: %s  article_id: %s', search_id, article_id)
+        '[ database ] search and article connected | search_id: %s  article_id: %s, connection_id: %s', search_id, article_id, connection_id)
+    return connection_id
 
 def insert_search(search_hash, **search_kwargs):
     logger.debug('[database_util][insert_search][IN] | search_hash : %s, search_kwargs : %s', search_hash, search_kwargs)
@@ -135,6 +143,29 @@ def update_search_offset(offset, hash):
 
 # SELECT
 
+def get_auhtor(first_name, last_name):
+    cursor = cnx.cursor(buffered=True, dictionary=True)
+    name = last_name+'|'+first_name
+    logger.debug('[database_util][get_auhtor][IN] | name: %s', name)
+    sql = "SELECT * FROM sciencedirect.authors WHERE name = %s LIMIT 1"
+    
+    cursor.execute(sql, (name, ))
+    fetch_res = cursor.fetchone()
+    logger.debug('[database_util][get_auhtor][OUT] | fetch_res : %s', fetch_res)
+    cursor.reset()
+    return fetch_res
+
+def get_article(pii):
+    cursor = cnx.cursor(buffered=True, dictionary=True)
+    logger.debug('[database_util][get_article][IN] | pii : %s', pii)
+    sql = "SELECT * FROM sciencedirect.articles WHERE pii = %s LIMIT 1"
+    
+    cursor.execute(sql, (pii, ))
+    fetch_res = cursor.fetchone()
+    logger.debug('[database_util][get_article][OUT] | fetch_res : %s', fetch_res)
+    cursor.reset()
+    return fetch_res
+
 def get_search_suggest(input_key, input_value):
     logger.debug('[database_util][get_search_suggest][IN] | input_key : %s, input_value : %s', input_key, input_value)
     sql = "SELECT " + str(input_key) + " FROM sciencedirect.searchs WHERE " + str(input_key) + " LIKE %s;"
@@ -163,12 +194,14 @@ def get_search_suggest_all(**search_kwargs):
 
 
 def get_search(search_hash):
+    cursor = cnx.cursor(buffered=True, dictionary=True)
     logger.debug('[database_util][get_search][IN] | search_hash : %s', search_hash)
-    sql = "SELECT * FROM sciencedirect.searchs WHERE hash = %s"
+    sql = "SELECT * FROM sciencedirect.searchs WHERE hash = %s LIMIT 1"
     
     cursor.execute(sql, (search_hash, ))
     fetch_res = cursor.fetchone()
     logger.debug('[database_util][get_search][OUT] | fetch_res : %s', fetch_res)
+    cursor.reset()
     return fetch_res
 
 
@@ -177,6 +210,7 @@ def is_row_exist(table, column, value):
     val = (table, column, value)
     cursor.execute(sql, val)
     result = cursor.fetchone()
+    cursor.reset() 
     return result
 
 
