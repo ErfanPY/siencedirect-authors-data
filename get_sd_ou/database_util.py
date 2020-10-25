@@ -18,6 +18,10 @@ cursor = cnx.cursor(buffered=True)
 #executeScriptsFromFile('/root/dev/sciencedirect-authors-data/db/scripts/sciencedirect.sql', database.cursor)
 # cnx.commit()
 
+def result_reper (res_dict):
+    result_list = list(filter(lambda x: x[1] not in [' ', '', [], None], res_dict.items()))
+    return "|".join(result_list)
+
 # INSERT
 
 
@@ -204,6 +208,34 @@ def get_search(search_hash):
     cursor.reset()
     return fetch_res
 
+def get_search_articles(search_id):
+    cursor = cnx.cursor(buffered=True, dictionary=True)
+    sql = "SELECT t3.*\
+          FROM searchs AS t1\
+          JOIN search_articles AS t2 ON t1.search_id = t2.search_id\
+          JOIN articles AS t3 ON t2.article_id = t3.article_id\
+          WHERE t2.author_id = %s"
+
+    val = (search_id, )
+    cursor.execute(sql, val)
+
+    myresult = cursor.fetchall()
+    return myresult    
+
+def get_db_result(**search_kwargs):
+    searchs = {}
+    for search in get_search_suggest_all(**search_kwargs):
+        del search['search_hash']
+        search_rep = result_reper(search)
+        searchs[search_rep] = {}
+        for article in get_search_articles(search['search_id']):
+            article_rep = result_reper(article)
+            searchs[search_rep][article_rep] = []
+            for author in get_article_authors(article['article_id']):
+                author_rep = result_reper(author)
+                searchs[search_rep][article_rep].append(author_rep)
+    return searchs
+
 
 def is_row_exist(table, column, value):
     sql = "SELECT EXISTS(SELECT 1 FROM %s WHERE %s='%s' LIMIT 1)"
@@ -229,7 +261,8 @@ def get_id_less_authors():
 
 
 def get_article_authors(article_id):
-    sql = "SELECT t1.title, t3.name\
+    cursor = cnx.cursor(buffered=True, dictionary=True)
+    sql = "SELECT t3.*\
           FROM articles AS t1\
           JOIN article_authors AS t2 ON t1.article_id = t2.article_id\
           JOIN authors AS t3 ON t2.author_id = t3.author_id\

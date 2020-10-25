@@ -1,0 +1,19 @@
+<ul class="accordion" searchs>
+  {% for search, articles in searchs.items() %}
+  <li search>
+    <a class="toggle" href="javascript:void(0);">{{search}}</a>
+    <ul class="inner" articles>
+      {% for article, authors in articles.items() %}
+      <li article>
+        <a class="toggle" href="javascript:void(0);">{{article}}</a>
+        <ul class="inner" autors>
+          {% for author in authors %}
+          <li>{{author}}</li>
+          {%endfor%}    
+        </ul>
+      </li>
+      {%endfor%}
+    </ul>
+  </li>
+  {%endfor%}
+</ul>

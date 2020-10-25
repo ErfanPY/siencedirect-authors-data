@@ -9,7 +9,7 @@ from celery import Celery
 import time
 import logging
 from get_sd_ou import get_sd_ou
-from get_sd_ou.database_util import get_search_suggest, get_search
+from get_sd_ou.database_util import get_search_suggest, get_search, get_db_result
 from get_sd_ou.class_util import Search_page
 logger = logging.getLogger('mainLogger')
 logger.debug('[app] INIT')
@@ -104,9 +104,10 @@ def db_start_search():
         'docId': form.docId.data
     }
     kwargs['offset'] = 0
-    search_hash = Search_page(**kwargs).db_hash()
-    database_result = get_search(search_hash)
-    return str(database_result)
+    database_result = get_db_result(**kwargs)
+
+    return render_template('db_result.html', searchs=database_result)
+    #return str(database_result)
 
 @app.route('/db_suggest', methods=['POST'])
 def db_suggest():
