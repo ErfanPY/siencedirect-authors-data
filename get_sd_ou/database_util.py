@@ -19,8 +19,11 @@ cursor = cnx.cursor(buffered=True)
 # cnx.commit()
 
 def result_reper (res_dict):
-    result_list = list(filter(lambda x: x[1] not in [' ', '', [], None], res_dict.items()))
-    return "|".join(result_list)
+    res_list = []
+    filtered_items_list = list(filter(lambda x: x[1] not in [' ', '', [], None], res_dict.items()))
+    for item in filtered_items_list:
+        res_list.append(f'{item[0]}: {item[1]}')
+    return "|".join(res_list)
 
 # INSERT
 
@@ -175,7 +178,7 @@ def get_search_suggest(input_key, input_value):
     sql = "SELECT " + str(input_key) + " FROM sciencedirect.searchs WHERE " + str(input_key) + " LIKE %s;"
     print(sql)
     cursor.execute(sql, ('%'+input_value+'%', ))
-    fetch_res = list(set(cursor.fetchall()))
+    fetch_res = list(set([i[0] for i in cursor.fetchall()]))
     logger.debug('[database_util][get_search_suggest][OUT] | input_key : %s, input_value : %s, fetch_res : %s',  input_key, input_value, fetch_res)
     return fetch_res
 
@@ -211,10 +214,10 @@ def get_search(search_hash):
 def get_search_articles(search_id):
     cursor = cnx.cursor(buffered=True, dictionary=True)
     sql = "SELECT t3.*\
-          FROM searchs AS t1\
-          JOIN search_articles AS t2 ON t1.search_id = t2.search_id\
-          JOIN articles AS t3 ON t2.article_id = t3.article_id\
-          WHERE t2.author_id = %s"
+          FROM sciencedirect.searchs AS t1\
+          JOIN sciencedirect.search_articles AS t2 ON t1.search_id = t2.search_id\
+          JOIN sciencedirect.articles AS t3 ON t2.article_id = t3.article_id\
+          WHERE t2.search_id = %s"
 
     val = (search_id, )
     cursor.execute(sql, val)
@@ -225,7 +228,7 @@ def get_search_articles(search_id):
 def get_db_result(**search_kwargs):
     searchs = {}
     for search in get_search_suggest_all(**search_kwargs):
-        del search['search_hash']
+        del search['hash']
         search_rep = result_reper(search)
         searchs[search_rep] = {}
         for article in get_search_articles(search['search_id']):
