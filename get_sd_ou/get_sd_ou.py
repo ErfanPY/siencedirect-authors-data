@@ -75,41 +75,56 @@ def get_next_article(search_page):
 
 
 def get_prev_serach_offset(**search_kwargs):
-    logger.debug('[get_sd_ou][get_prev_serach_offset][IN] | search_kwargs : %s', search_kwargs)
+    logger.debug(
+        '[get_sd_ou][get_prev_serach_offset][IN] | search_kwargs : %s', search_kwargs)
     search_hash = Search_page(**search_kwargs).db_hash()
     search = get_search(search_hash)
     if not search:
         search_kwargs['offset'] = 0
         search_id = insert_search(search_hash=search_hash, **search_kwargs)
         search = [search_id, 0]
-    logger.debug('[get_sd_ou][get_prev_serach_offset][OUT] continue saved search | search_id : %s, offset : %s', search[0], search[-1])
-    return search['search_id'] , search['offset']
+    logger.debug(
+        '[get_sd_ou][get_prev_serach_offset][OUT] continue saved search | search_id : %s, offset : %s', search[0], search[-1])
+    return search['search_id'], search['offset']
+
+
 def insert_random_search():
     import random
-    aff = ['iran', 'china', 'US', 'UK', 'iraq']
-    date = ['2020', '1999', '2002', '2010', '2019']
-    term = ['nano', 'bio', 'data', 'game']
-    page = ['10', '20', '33']
-    auth = ['ali', 'erfan', 'bagher', 'sara']
-    for i in range(20):
+    aff = ['iran', 'china', 'US', 'UK', 'iraq', 'brazil',
+           'arabestan', 'turkiey', 'tajikestan', 'holan', 'netherland']
+    term = ['nano', 'bio', 'data', 'game', 'tech', 'computer', 'micro', 'AI']
+    auth = ['ali', 'erfan', 'bagher', 'sara',
+            'babak', 'mohamad', 'jack', 'jef']
+    for search in range(20):
         a = random.choice(aff)
-        b = random.choice(date)
+        b = random.randrange(1990, 2020)
         c = random.choice(term)
-        d = random.choice(page)
-        e  = random.choice(auth)
+        d = random.randrange(3, 900)
+        e = random.choice(auth)
+        search_id, _ = get_prev_serach_offset(
+            **{'affiliation': a, 'date': b, 'qs': c, 'page': d, 'authors': e})
+        for _ in range(random.randint(3, 6)):
+            authors = [{'name': name, 'email': name+'@gmail.com'}
+                       for name in random.shuffle(auth)[random.randint(1, 4)]]
+            article_id = insert_article_data(pii=''.join(random.sample(
+                'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890', 10)), authors=authors)
+            connect_search_article(search_id, article_id)
 
-        get_prev_serach_offset(**{'affiliation':a, 'date':b, 'qs':c, 'page':d, 'authors':e})
+
 @celery.task(bind=True, name='start_search')
 def start_search(self, **search_kwargs):
-    logger.debug('[get_sd_ou][start_search][IN] | search_kwargs : %s', search_kwargs)
-    search_id, search_kwargs['offset'] = get_prev_serach_offset(**search_kwargs)
+    logger.debug(
+        '[get_sd_ou][start_search][IN] | search_kwargs : %s', search_kwargs)
+    search_id, search_kwargs['offset'] = get_prev_serach_offset(
+        **search_kwargs)
     first_page = True
     count = 0
 
     for page_res in get_next_page(**search_kwargs):
         page, index_current_page, pages_count = page_res.values()
-        if not first_page:
-            update_search_offset(hash=page.db_hash(), offset=page.offset)
+        page_offset = page.offset
+        page_hash = page.do_hash()
+
         self.update_state(state='PROGRESS',
                           meta={'current': index_current_page, 'total': pages_count,
                                 'status': f'Getting page articles\n{page.url}'})
@@ -120,6 +135,8 @@ def start_search(self, **search_kwargs):
             article_data = article.get_article_data()
             article_id = insert_article_data(**article_data)
             connect_search_article(search_id, article_id)
+            page_offset += 1
+            update_search_offset(hash=page_hash, offset=page_offset)
             self.update_state(state='PROGRESS',
                               meta={'current': index_current_page, 'total': pages_count,
                                     'status': f'{index_current_article}/{articles_count} \n {article.url}'})
@@ -127,6 +144,7 @@ def start_search(self, **search_kwargs):
             time.sleep(0.1)
         first_page = False
     logger.debug('[get_sd_ou][start_search][OUT] | count : %s', count)
+
 
 def init_queue():
     global main_queue
