@@ -82,9 +82,9 @@ def get_prev_serach_offset(**search_kwargs):
     if not search:
         search_kwargs['offset'] = 0
         search_id = insert_search(search_hash=search_hash, **search_kwargs)
-        search = [search_id, 0]
+        search = {'search_id':search_id, 'offset':0}
     logger.debug(
-        '[get_sd_ou][get_prev_serach_offset][OUT] continue saved search | search_id : %s, offset : %s', search[0], search[-1])
+        '[get_sd_ou][get_prev_serach_offset][OUT] continue saved search | search_id : %s, offset : %s', search['search_id'], search['offset'])
     return search['search_id'], search['offset']
 
 
@@ -104,12 +104,10 @@ def insert_random_search():
         search_id, _ = get_prev_serach_offset(
             **{'affiliation': a, 'date': b, 'qs': c, 'page': d, 'authors': e})
         for _ in range(random.randint(3, 6)):
-            authors = [{'name': name, 'email': name+'@gmail.com'}
-                       for name in random.shuffle(auth)[random.randint(1, 4)]]
+            authors = [{'first_name': name, 'last_name': 'GH', 'email': name+'@gmail.com'} for name in auth[:random.randint(0, 8)]]
             article_id = insert_article_data(pii=''.join(random.sample(
                 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890', 10)), authors=authors)
             connect_search_article(search_id, article_id)
-
 
 @celery.task(bind=True, name='start_search')
 def start_search(self, **search_kwargs):
