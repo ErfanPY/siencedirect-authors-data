@@ -32,14 +32,14 @@ def insert_article(pii, title='', bibtex='', **kwargs):
     # update = UPDATE articles SET title=%S
     sql = "INSERT IGNORE INTO sciencedirect.articles (pii, title, bibtex) VALUES (%s, %s, %s);"
     val = (pii, title, bibtex)
-    logger.debug('[database_util][insert_article][IN] | : %s, ', )
+    logger.debug('[database_util][insert_article][IN] | pii : %s', pii)
     cursor.execute(sql, val)
     cnx.commit()
     article_id = cursor.lastrowid
     if not article_id:
         article_id = get_article(pii)['article_id']
     logger.debug(
-        '[ database ] article inserted | pii: %s  id: %s', pii, article_id)
+        '[database_util][insert_article][OUT] | pii: %s  id: %s', pii, article_id)
     return article_id
 
 
@@ -49,7 +49,7 @@ def insert_author(first_name, last_name, email='', affiliation='', is_coresponde
             VALUES (%s, %s, %s, %s)"
     
     val = (name, email, affiliation, id)
-    logger.debug('[database_util][insert_article][IN] | : %s, ', )
+    logger.debug('[database_util][insert_auhtor][IN] | name : %s , email: %s, aff: %s, scopus: %s',name, email, affiliation, id)
     cursor.execute(sql, val)
     cnx.commit()
     author_id = cursor.lastrowid
@@ -66,7 +66,7 @@ def connect_article_author(article_id, author_id, is_corresponde=0):
     cnx.commit()
     connection_id = cursor.lastrowid
     logger.debug(
-        '[ database ] article and author connected | article_id: %s  author_id: %s, connection_id: %s', article_id, author_id, connection_id)
+        '[database_util][connect_article_author][OUT] | article_id: %s  author_id: %s, connection_id: %s', article_id, author_id, connection_id)
     return connection_id
 
 
@@ -74,12 +74,14 @@ def connect_search_article(search_id, article_id):
     # TODO connect article with pii (get article id from articles from pii)
     sql = "INSERT IGNORE INTO sciencedirect.search_articles (search_id, article_id) VALUES (%s, %s);"
     val = (search_id, article_id)
-    logger.debug('[database_util][insert_article][IN] | : %s, ', )
+    logger.debug('[database_util][connect_search_article][IN] | search_id : %s, article_id: %s', search_id, article_id)
     cursor.execute(sql, val)
     cnx.commit()
     connection_id = cursor.lastrowid
+    if not connection_id :
+        print('####\n\n###\n\n###')
     logger.debug(
-        '[ database ] search and article connected | search_id: %s  article_id: %s, connection_id: %s', search_id, article_id, connection_id)
+        '[database_util][connect_search_article][OUT] | search_id: %s  article_id: %s, connection_id: %s', search_id, article_id, connection_id)
     return connection_id
 
 def insert_search(search_hash, **search_kwargs):
@@ -272,9 +274,9 @@ def get_article_authors(article_id):
     logger.debug('[db_util][get_article_authors][IN] | article_id: %s', article_id)
     cursor = cnx.cursor(buffered=True, dictionary=True)
     sql = "SELECT t3.*\
-          FROM articles AS t1\
-          JOIN article_authors AS t2 ON t1.article_id = t2.article_id\
-          JOIN authors AS t3 ON t2.author_id = t3.author_id\
+          FROM sciencedirect.articles AS t1\
+          JOIN sciencedirect.article_authors AS t2 ON t1.article_id = t2.article_id\
+          JOIN sciencedirect.authors AS t3 ON t2.author_id = t3.author_id\
           WHERE t2.author_id = %s"
 
     val = (article_id, )
