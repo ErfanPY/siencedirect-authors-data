@@ -111,8 +111,7 @@
                 percent = parseInt(data['current'] * 100 / data['total']);
                 nanobar.go(percent);
                 console.log('GO')
-                $(status_div.childNodes[1]).text(percent + '%' + '( ' + data['current'] + '/' + data['total'] +
-                    ' )');
+                $(status_div.childNodes[1]).text(data['current'] + '/' + data['total'] + 'Pages');
                 $(status_div.childNodes[2]).text(data['status']);
                 if (data['state'] != 'PENDING' && data['state'] != 'PROGRESS') {
                     if ('result' in data) {
