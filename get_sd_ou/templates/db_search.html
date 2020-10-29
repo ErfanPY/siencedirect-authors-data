@@ -12,7 +12,7 @@
     {% endfor %}
 
     {% include 'search_form.html' %}
-    <button onclick="$('#start_form')[0].reset();">CLEAR</button>
+    <button onclick="$('#search-advanced-form')[0].reset();">CLEAR</button>
     <hr>
     <h2>Search results</h2>
 
@@ -54,9 +54,9 @@
                 });
             });
 
-            $("#start_form").submit(function (e) {
+            $("#search-advanced-form").submit(function (e) {
                 e.preventDefault(); // avoid to execute the actual submit of the form.
-                console.log($('#start_form').serialize());
+                console.log($('#search-advanced-form').serialize());
                 var form = $(this);
 
                 start_search(form)
@@ -90,9 +90,9 @@
         // };
 
         // $(document).ready(function() {
-        //     $('#start_form')[0].reset();
+        //     $('#search-advanced-form')[0].reset();
         //     $(".form-input").keyup(function() {
-        //         form = $("#start_form")
+        //         form = $("#search-advanced-form")
         //         $.ajax({
         //             type: 'POST',
         //             url: '/db_suggest',

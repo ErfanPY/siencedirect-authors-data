@@ -68,9 +68,9 @@
             });
         }
 
-        $("#start_form").submit(function (e) {
+        $("#search-advanced-form").submit(function (e) {
             e.preventDefault(); // avoid to execute the actual submit of the form.
-            console.log($('#start_form').serialize());
+            console.log($('#search-advanced-form').serialize());
             var form = $(this);
 
             start_long_task(form)

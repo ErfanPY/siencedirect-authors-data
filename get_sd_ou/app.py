@@ -26,22 +26,6 @@ celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
 celery.conf.update(app.config)
 
 
-class StartForm(FlaskForm):
-    date = StringField('years')
-    qs = StringField('Search term')
-    pub = StringField('in jornal or book title ')
-    authors = StringField('authors')
-    affiliation = StringField('affiliation')
-    volume = IntegerField('volume')
-    issue = IntegerField('issue')
-    page = IntegerField('page')
-    tak = StringField('Title, abstract or author-specified keywords')
-    title = StringField('title')
-    refrences = StringField('refrences')
-    docId = StringField('ISSN or ISBN')
-    submit = SubmitField('Start')
-
-
 @app.route('/scopus_search', methods=['POST'])
 def scopus_search():
     # task = get_sd_ou.scopus_search.apply_async(queue="scopus_search")
@@ -49,9 +33,12 @@ def scopus_search():
     #                                               task_id=task.id)}
     return jsonify({}), 202, {'Location': url_for('scopus_status')}
 
+
 scopus_i = 0
 scopus_total = random.randint(10000, 30000)
 scopus_time = time.time()
+
+
 @app.route('/scopus_status')
 def scopus_status():
     global scopus_i
@@ -82,51 +69,38 @@ def scopus_status():
     #         'total': 1,
     #         'status': str(task.info),  # this is the exception raised
     #     }
-    
+
     response = {
-            'state': 'PROGRESS',
-            'current': scopus_i,
-            'total': scopus_total,
-            'status': scopus_i+'/'+scopus_total
-        }
+        'state': 'PROGRESS',
+        'current': scopus_i,
+        'total': scopus_total,
+        'status': scopus_i+'/'+scopus_total
+    }
 
     if time.time()-scopus_time > 4:
         scopus_time = time.time()
         scopus_i += 1
-    if scopus_i == scopus_total :
+    if scopus_i == scopus_total:
         response['result'] = scopus_total+' author got'
-    
+
     return jsonify(response)
 
 
 @app.route('/db_search')
 def db_search():
-    form = StartForm()
-    return render_template('db_search.html', form=form)
+    return render_template('db_search.html')
+
 
 @app.route('/db_start_search', methods=['POST'])
 def db_start_search():
-    form = StartForm()
     logger.debug('[app] starting task')
-    kwargs = {
-        'date': form.date.data,
-        'qs': form.qs.data,
-        'pub': form.pub.data,
-        'authors': form.authors.data,
-        'affiliations': form.affiliation.data,
-        'volume': form.volume.data,
-        'issue': form.issue.data,
-        'page': form.page.data,
-        'tak': form.tak.data,
-        'title': form.title.data,
-        'refrences': form.refrences.data,
-        'docId': form.docId.data
-    }
+    kwargs = dict(request.form)
     kwargs['offset'] = 0
     database_result = get_db_result(**kwargs)
 
     return render_template('db_result.html', searchs=database_result)
-    #return str(database_result)
+    # return str(database_result)
+
 
 @app.route('/db_suggest', methods=['POST'])
 def db_suggest():
@@ -138,8 +112,9 @@ def db_suggest():
     print('###', input_key, input_value)
     suggestion_list = get_search_suggest(input_key, input_value)
 
-    logger.debug('[app][db_suggest][OUT] | suggestion_list : %s', suggestion_list)
-    return jsonify({'suggestion_list':suggestion_list})
+    logger.debug(
+        '[app][db_suggest][OUT] | suggestion_list : %s', suggestion_list)
+    return jsonify({'suggestion_list': suggestion_list})
 
 
 @app.route('/db_suggest_all', methods=['POST'])
@@ -165,34 +140,15 @@ def db_suggest_all():
 
 @app.route('/longtask', methods=['POST'])
 def longtask():
-
-    form = StartForm()
     logger.debug('[app] starting task')
-    kwargs = {
-        'date': form.date.data,
-        'qs': form.qs.data,
-        'pub': form.pub.data,
-        'authors': form.authors.data,
-        'affiliations': form.affiliation.data,
-        'volume': form.volume.data,
-        'issue': form.issue.data,
-        'page': form.page.data,
-        'tak': form.tak.data,
-        'title': form.title.data,
-        'refrences': form.refrences.data,
-        'docId': form.docId.data
-    }
+    kwargs = dict(request.form)
     kwargs['offset'] = 0
-    task = get_sd_ou.start_search.apply_async(
-        kwargs=kwargs, queue="main_search")
-    print(kwargs)
-    return jsonify({}), 202, {'Location': url_for('taskstatus',
-                                                  task_id=task.id)}
+    task = get_sd_ou.start_search.apply_async(kwargs=kwargs, queue="main_search")
+    return jsonify({}), 202, {'Location': url_for('taskstatus', task_id=task.id)}
 
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    form = StartForm()
     return render_template('index.html')
 
 
