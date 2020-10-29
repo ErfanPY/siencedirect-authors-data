@@ -116,7 +116,8 @@ def start_search(self, **search_kwargs):
         **search_kwargs)
     first_page = True
     count = 0
-
+    cleaned_search_kwargs = {k:v for k, v in search_kwargs if v not in ['', ' ', [], None]}
+    cleaned_search_kwargs_reper  = " | ".join([': '.join([k, v]) for k, v in cleaned_search_kwargs])
     for page_res in get_next_page(**search_kwargs):
         page, index_current_page, pages_count = page_res.values()
         page_offset = page.offset
@@ -136,7 +137,7 @@ def start_search(self, **search_kwargs):
             update_search_offset(hash=page_hash, offset=page_offset)
             self.update_state(state='PROGRESS',
                               meta={'current': index_current_page, 'total': pages_count,
-                                    'status': f'{index_current_article}/{articles_count} \n {article.url}'})
+                                    'status': f'Searching with this Fields: {cleaned_search_kwargs_reper}\n{index_current_article}/{articles_count} \n {article.url}'})
             count += 1
             time.sleep(0.1)
         first_page = False

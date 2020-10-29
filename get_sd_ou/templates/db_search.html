@@ -4,57 +4,13 @@
 <link rel="stylesheet" href="/static/awesomplete.css" />
 <script src="/static/awesomplete.js" async></script>
 
-<style>
-    .column {
-        float: left;
-        width: 50%;
-    }
-
-    /* Clear floats after the columns */
-
-    .row:after {
-        content: "";
-        display: table;
-        clear: both;
-    }
-</style>
-</head>
-
 <body>
     <h1>Database search</h1>
     {% for message in get_flashed_messages() %}
     <p style="color: red;">{{ message }}</p>
     {% endfor %}
 
-    <form id="start_form" method="POST">
-        {{ form.hidden_tag() }}
-        <p>
-            {{ form.date.label }}<br> {{ form.date(class_="form-input") }} {% for error in form.date.errors %}
-            <span style="color: red;">[{{ error }}]</span> {% endfor %}
-        </p>
-        <p>
-            <div class="row">
-                <div class="column">
-                    {{ form.qs.label }}<br> {{ form.qs(class_="form-input") }}<br> {{ form.pub.label }}<br>
-                    {{ form.pub(class_="form-input") }}<br> {{ form.authors.label }}<br>
-                    {{ form.authors(class_="form-input") }}<br> {{ form.affiliation.label
-                    }}
-                    <br> {{ form.affiliation(class_="form-input") }}<br> {{ form.volume.label }}
-                    <br> {{ form.volume(class_="form-input") }}<br> {{ form.issue.label }}<br>
-                    {{ form.issue(class_="form-input") }}
-                </div>
-                <div class="column">
-                    {{ form.page.label }}<br> {{ form.page(class_="form-input") }}<br> {{ form.tak.label }}<br>
-                    {{ form.tak(class_="form-input") }}<br> {{ form.title.label }}<br>
-                    {{ form.title(class_="form-input") }}<br> {{ form.refrences.label
-                    }}
-                    <br> {{ form.refrences(class_="form-input") }}<br> {{ form.docId.label }}<br>
-                    {{ form.docId(class_="form-input") }}
-                </div>
-            </div>
-        </p>
-        <p>{{ form.submit() }}</p>
-    </form>
+    {% include 'search_form.html' %}
     <button onclick="$('#start_form')[0].reset();">CLEAR</button>
     <hr>
     <h2>Search results</h2>
