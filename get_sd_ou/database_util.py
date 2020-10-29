@@ -49,14 +49,25 @@ def insert_author(first_name, last_name, email='', affiliation='', is_coresponde
             VALUES (%s, %s, %s, %s)"
     
     val = (name, email, affiliation, id)
-    logger.debug('[database_util][insert_auhtor][IN] | name : %s , email: %s, aff: %s, scopus: %s',name, email, affiliation, id)
+    logger.debug('[database_util][insert_author][IN] | name : %s , email: %s, aff: %s, scopus: %s',name, email, affiliation, id)
     cursor.execute(sql, val)
     cnx.commit()
     author_id = cursor.lastrowid
     if not author_id:
-        author_id = get_auhtor(first_name, last_name)['author_id']
+        author_id = get_author(first_name, last_name)['author_id']
     return author_id
 
+def get_article_author_id(article_id, author_id):
+    sql = 'SELECT * FROM sciencedirect.article_authors WHERE article_id = %s AND author_id = %s'
+    cursor.execute(sql, [article_id, author_id])
+    fetch_res = cursor.fetchall()[-1]
+    return 1 if fetch_res else 0
+
+def get_search_article_id(search_id, article_id):
+    sql = 'SELECT * FROM sciencedirect.search_articles WHERE search_id = %s AND article_id = %s'
+    cursor.execute(sql, [search_id, article_id])
+    fetch_res = cursor.fetchall()[-1]
+    return 1 if fetch_res else 0
 
 def connect_article_author(article_id, author_id, is_corresponde=0):
     # TODO connect article with pii (get article id from articles from pii)
@@ -65,6 +76,8 @@ def connect_article_author(article_id, author_id, is_corresponde=0):
     cursor.execute(sql, val)
     cnx.commit()
     connection_id = cursor.lastrowid
+    if not connection_id :
+        connection_id = get_article_author_id(article_id, author_id)
     logger.debug(
         '[database_util][connect_article_author][OUT] | article_id: %s  author_id: %s, connection_id: %s', article_id, author_id, connection_id)
     return connection_id
@@ -79,7 +92,7 @@ def connect_search_article(search_id, article_id):
     cnx.commit()
     connection_id = cursor.lastrowid
     if not connection_id :
-        print('####\n\n###\n\n###')
+        connection_id = get_search_article_id(search_id, article_id)
     logger.debug(
         '[database_util][connect_search_article][OUT] | search_id: %s  article_id: %s, connection_id: %s', search_id, article_id, connection_id)
     return connection_id
@@ -155,7 +168,7 @@ def update_search_offset(offset, hash):
 
 # SELECT
 
-def get_auhtor(first_name, last_name):
+def get_author(first_name, last_name):
     cursor = cnx.cursor(buffered=True, dictionary=True)
     name = last_name+'|'+first_name
     sql = "SELECT * FROM sciencedirect.authors WHERE name = %s LIMIT 1"
@@ -179,7 +192,6 @@ def get_article(pii):
 def get_search_suggest(input_key, input_value):
     logger.debug('[database_util][get_search_suggest][IN] | input_key : %s, input_value : %s', input_key, input_value)
     sql = "SELECT " + str(input_key) + " FROM sciencedirect.searchs WHERE " + str(input_key) + " LIKE %s;"
-    print(sql)
     cursor.execute(sql, ('%'+input_value+'%', ))
     fetch_res = list(set([i[0] for i in cursor.fetchall()]))
     logger.debug('[database_util][get_search_suggest][OUT] | input_key : %s, input_value : %s, fetch_res : %s',  input_key, input_value, fetch_res)

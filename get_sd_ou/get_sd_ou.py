@@ -108,7 +108,6 @@ def insert_random_search():
             article_id = insert_article_data(pii=''.join(random.sample(
                 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890', 10)), authors=authors)
             connect_search_article(search_id, article_id)
-
 @celery.task(bind=True, name='start_search')
 def start_search(self, **search_kwargs):
     logger.debug(

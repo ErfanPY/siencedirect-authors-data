@@ -1,12 +1,15 @@
-<ul class="accordion" searchs>
+<link rel="stylesheet" href="/static/db_result_style.css">
+<script src="/static/db_result_script.js"></script>
+
+<ul class="accordion">
   {% for search, articles in searchs.items() %}
-  <li search>
+  <li>
     <a class="toggle" href="javascript:void(0);">{{search}}</a>
-    <ul class="inner" articles>
+    <ul class="inner">
       {% for article, authors in articles.items() %}
-      <li article>
+      <li>
         <a class="toggle" href="javascript:void(0);">{{article}}</a>
-        <ul class="inner" autors>
+        <ul class="inner">
           {% for author in authors %}
           <li>{{author}}</li>
           {%endfor%}    
