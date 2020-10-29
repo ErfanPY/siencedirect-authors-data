@@ -193,7 +193,7 @@ def longtask():
 @app.route('/', methods=['GET', 'POST'])
 def index():
     form = StartForm()
-    return render_template('index.html', form=form)
+    return render_template('index.html')
 
 
 @app.route('/taskstatus/<task_id>')
