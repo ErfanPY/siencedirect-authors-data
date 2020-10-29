@@ -1,6 +1,5 @@
 {% extends "base.html" %} {% block content %}
 <link rel="stylesheet" href="/static/db_result_style.css">
-<script src="/static/db_result_script.js"></script>
 
 <link rel="stylesheet" href="/static/awesomplete.css" />
 <script src="/static/awesomplete.js" async></script>
@@ -21,8 +20,9 @@
         var aws_dict = {}
         $(document).ready(function () {
             $(".form-input").focusout(function () {
-                if (this.id in aws_dict) {
-                    aws_dict[this.id].destroy()
+                if (input.id in aws_dict) {
+		    alert('closed');
+                    aws_dict[input.id].close()
                 }
             })
             $(".form-input").keyup(function () {
@@ -36,17 +36,8 @@
                     },
                     success: function (suggestion_json) {
                         console.log(suggestion_json);
-                        var suggestion_list = suggestion_json.suggestion_list
-                        if (this.id in aws_dict) {
-                            aws = aws_dict[this.id]
-                        } else {
-                            aws_dict[this.id] = new Awesomplete(input, {
-                                list: suggestion_list,
-                                minChars: 1,
-                            });
-                            aws = aws_dict[this.id]
-                        }
-                        aws.list = suggestion_list
+                        var suggestion_list = suggestion_json.suggestion_list;
+			update_sugg(input, suggestion_list);
                     },
                     error: function () {
                         alert('Unexpected error');
