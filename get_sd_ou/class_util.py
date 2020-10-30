@@ -253,19 +253,20 @@ class Article(Page):
         authors_groups_list_json = json_data['authors']['content']
         authors_groups_list_json = list(
             filter(lambda dict: dict['#name'] == 'author-group', authors_groups_list_json))
-
         try:
-
             for group in authors_groups_list_json:  # in authors maybe some group which devides authors
                 group_aff = list(filter(lambda dict: dict['#name'] == 'affiliation', group['$$']))[
                     0]['$$']
-                group_aff = list(filter(lambda dict: dict['#name'] == 'textfn', group_aff))[
-                    0]['_']
+                group_aff = list(filter(lambda dict: dict['#name'] == 'textfn', group_aff))
+                print(group_aff)
+                group_aff = group_aff[0]['_']
                 group_aff_country = group_aff.split(',')[-1].strip()
                 group_authors = list(
                     filter(lambda dict: dict['#name'] == 'author', group['$$']))
                 [authors_list_json.append((group_author, group_aff_country))
                  for group_author in group_authors]
+                print(1.1)
+            print(2)
         except IndexError:
             bio_list = json_data['biographies']['content']
             group_aff_country = [bio['$$'][0]['$$'][1]
@@ -275,7 +276,7 @@ class Article(Page):
                     filter(lambda dict: dict['#name'] == 'author', group['$$']))
                 [authors_list_json.append((group_author, group_aff_country))
                  for group_author in group_authors]
-
+            print(3)
         for index, (author_json, affiliation_country) in enumerate(authors_list_json):
             first_name = author_json['$$'][0]['_']
             last_name = author_json['$$'][1]['_']
@@ -289,7 +290,7 @@ class Article(Page):
             """
             authors_res[index] = {'first_name': first_name, 'last_name': last_name,
                                   'email': email, 'affiliation': affiliation_country}
-
+        print(4)
         return authors_res
 
     @property
