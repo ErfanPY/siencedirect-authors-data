@@ -45,16 +45,17 @@ def insert_article(pii, title='', bibtex='', **kwargs):
 
 def insert_author(first_name, last_name, email='', affiliation='', is_coresponde=False, id=None):
     name = last_name+'|'+first_name
-    sql = "INSERT IGNORE INTO sciencedirect.authors (name, email, affiliation, scopus) \
-            VALUES (%s, %s, %s, %s)"
+    sql = "INSERT IGNORE INTO sciencedirect.authors (name, email, affiliation) \
+            VALUES (%s, %s, %s)"
     
-    val = (name, email, affiliation, id)
+    val = (name, email, affiliation)
     logger.debug('[database_util][insert_author][IN] | name : %s , email: %s, aff: %s, scopus: %s',name, email, affiliation, id)
     cursor.execute(sql, val)
     cnx.commit()
     author_id = cursor.lastrowid
     if not author_id:
-        author_id = get_author(first_name, last_name)['author_id']
+        print(author_id)
+        author_id = get_author(first_name, last_name, email=email)['author_id']
     return author_id
 
 def get_article_author_id(article_id, author_id):
@@ -168,12 +169,13 @@ def update_search_offset(offset, hash):
 
 # SELECT
 
-def get_author(first_name, last_name):
+def get_author(first_name, last_name, email=''):
     cursor = cnx.cursor(buffered=True, dictionary=True)
     name = last_name+'|'+first_name
-    sql = "SELECT * FROM sciencedirect.authors WHERE name = %s LIMIT 1"
+    logger.debug('[db_util][get_author][IN] | name: %s, email: %s', name, email)
+    sql = "SELECT * FROM sciencedirect.authors WHERE name = %s OR email = %s LIMIT 1"
     
-    cursor.execute(sql, (name, ))
+    cursor.execute(sql, (name, email))
     fetch_res = cursor.fetchone()
     cursor.reset()
     return fetch_res

@@ -249,7 +249,7 @@ class Article(Page):
 
         authors_res = {}
         authors_list_json = []
-        affiliations_list = re.findall(r'country[^\]\}]*"([a-zA-Z]*)"', json_element)
+        affiliations_list = re.findall(r'country[^\]\}]*"([^\]\}]*)"', json_element)
         authors_groups_list_json = json_data['authors']['content']
         authors_groups_list_json = list(
             filter(lambda dict: dict['#name'] == 'author-group', authors_groups_list_json))
@@ -262,7 +262,10 @@ class Article(Page):
         for index, author_json in enumerate(authors_list_json):
             affiliation_country = affiliations_list[index % len(affiliations_list)]
             first_name = author_json['$$'][0]['_']
-            last_name = author_json['$$'][1]['_']
+            try:
+                last_name = author_json['$$'][1]['_']
+            except KeyError:
+                last_name = " "
             email_check = list(
                 filter(lambda dic: dic['#name'] == 'e-address', author_json['$$']))
             email = None if not email_check else email_check[0]['_']
@@ -273,7 +276,6 @@ class Article(Page):
             """
             authors_res[index] = {'first_name': first_name, 'last_name': last_name,
                                   'email': email, 'affiliation': affiliation_country}
-        print(4)
         return authors_res
 
     @property
@@ -303,7 +305,6 @@ class Search_page (Page):
                 if value:
                     url += '{}={}&'.format(key, value)
             url += 'show={}&'.format(show_per_page)
-            print(url)
         logger.debug('[ Search_page ] __init__ | url: %s', url)
         super().__init__(url)
 
@@ -341,6 +342,8 @@ class Search_page (Page):
         if not hasattr(self, '_curent_page_num'):
             page_coursor_text = self.soup.select_one(
                 '#srp-pagination > li:nth-child(1)').text
+            if page_coursor_text == 'previous':
+                page_coursor_text = self.soup.select_one('#srp-pagination > li:nth-child(2)').text
             self._curent_page_num = int(page_coursor_text.split(' ')[1])
         return self._curent_page_num
 
@@ -349,6 +352,8 @@ class Search_page (Page):
         if not hasattr(self, '_pages_count'):
             page_coursor_text = self.soup.select_one(
                 '#srp-pagination > li:nth-child(1)').text
+            if page_coursor_text == 'previous':
+                page_coursor_text = self.soup.select_one('#srp-pagination > li:nth-child(2)').text
             self._pages_count = int(page_coursor_text.split(' ')[-1])
         return self._pages_count
 

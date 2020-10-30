@@ -133,11 +133,11 @@ def start_search(self, **search_kwargs):
             article_data = article.get_article_data()
             article_id = insert_article_data(**article_data)
             connect_search_article(search_id, article_id)
-            page_offset += 1
+            page_offset = str(int(page_offset)+1)
             update_search_offset(hash=page_hash, offset=page_offset)
             self.update_state(state='PROGRESS',
                               meta={'current': index_current_page, 'total': pages_count,
-                                    'status': f'Searching with this Fields: {cleaned_search_kwargs_reper}\n{index_current_article}/{articles_count} \n {article.url}'})
+                                  'status': f'Searching with this Fields: {cleaned_search_kwargs_reper}<br />{index_current_article} Article/{articles_count} <br /> {article.url}'})
             count += 1
             time.sleep(0.1)
         first_page = False
