@@ -6,7 +6,7 @@ import threading
 import logging
 
 from .class_util import Article, Search_page, Author
-from .database_util import (insert_article_data, insert_search,
+from .database_util import (init_db, insert_article_data, insert_search,
                             get_id_less_authors, get_search, update_author_scopus,
                             update_search_offset, connect_search_article)
 from flask import Flask
@@ -32,8 +32,8 @@ celery.conf.update(app.config)
 @celery.task(bind=True, name='scopus_search')
 def scopus_search(self):
     logger.debug('[get_sd_ou][scopus_search][IN] | ')
-    logger.debug('[Scopus_search] started')
-    names = get_id_less_authors()
+    db_connection = init_db()
+    names = get_id_less_authors(cnx=db_connection)
     count = 0
 
     for name in names:
@@ -41,7 +41,7 @@ def scopus_search(self):
         name = {'last_name': last, 'first_name': first}
         logger.debug(f'getting scopus | name:{name}')
         author = Author(**name, do_scopus=True)
-        update_author_scopus(name=author['name'], id=author['id'])
+        update_author_scopus(name=author['name'], id=author['id'], cnx=db_connection)
         count += 1
 
     logger.debug('[get_sd_ou][scopus_search][OUT] | authors_count : %s', count)
@@ -75,14 +75,14 @@ def get_next_article(search_page):
         yield res
 
 
-def get_prev_serach_offset(**search_kwargs):
+def get_prev_serach_offset(db_connection, **search_kwargs):
     logger.debug(
         '[get_sd_ou][get_prev_serach_offset][IN] | search_kwargs : %s', search_kwargs)
     search_hash = Search_page(**search_kwargs).db_hash()
-    search = get_search(search_hash)
+    search = get_search(search_hash, cnx=db_connection)
     if not search:
         search_kwargs['offset'] = 0
-        search_id = insert_search(search_hash=search_hash, **search_kwargs)
+        search_id = insert_search(search_hash=search_hash, **search_kwargs, cnx=db_connection)
         search = {'search_id':search_id, 'offset':0}
     logger.debug(
         '[get_sd_ou][get_prev_serach_offset][OUT] continue saved search | search_id : %s, offset : %s', search['search_id'], search['offset'])
@@ -109,12 +109,14 @@ def insert_random_search():
             article_id = insert_article_data(pii=''.join(random.sample(
                 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890', 10)), authors=authors)
             connect_search_article(search_id, article_id)
+
 @celery.task(bind=True, name='start_search')
 def start_search(self, **search_kwargs):
     logger.debug(
         '[get_sd_ou][start_search][IN] | search_kwargs : %s', search_kwargs)
+    db_connection = init_db()
     search_id, search_kwargs['offset'] = get_prev_serach_offset(
-        **search_kwargs)
+        **search_kwargs, db_cnx=db_connection)
     first_page = True
     count = 0
     cleaned_search_kwargs = {k:v for k, v in search_kwargs.items() if v not in ['', ' ', [], None]}
@@ -132,10 +134,10 @@ def start_search(self, **search_kwargs):
         for article_res in get_next_article(page):
             article, index_current_article, articles_count = article_res.values()
             article_data = article.get_article_data()
-            article_id = insert_article_data(**article_data)
-            connect_search_article(search_id, article_id)
+            article_id = insert_article_data(**article_data, cnx=db_connection)
+            connect_search_article(search_id, article_id, cnx=db_connection)
             page_offset = str(int(page_offset)+1)
-            update_search_offset(hash=page_hash, offset=page_offset)
+            update_search_offset(hash=page_hash, offset=page_offset, cnx=db_connection)
             self.update_state(state='PROGRESS',
                               meta={'current': index_current_page, 'total': pages_count,
                                   'status': f'Searching with this Fields: {cleaned_search_kwargs_reper}<br />{index_current_article}/{articles_count} Article<br /> {article.url}'})
