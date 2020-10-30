@@ -249,34 +249,18 @@ class Article(Page):
 
         authors_res = {}
         authors_list_json = []
-
+        affiliations_list = re.findall(r'country[^\]\}]*"([a-zA-Z]*)"', json_element)
         authors_groups_list_json = json_data['authors']['content']
         authors_groups_list_json = list(
             filter(lambda dict: dict['#name'] == 'author-group', authors_groups_list_json))
 
-        try:
-
-            for group in authors_groups_list_json:  # in authors maybe some group which devides authors
-                group_aff = list(filter(lambda dict: dict['#name'] == 'affiliation', group['$$']))[
-                    0]['$$']
-                group_aff = list(filter(lambda dict: dict['#name'] == 'textfn', group_aff))[
-                    0]['_']
-                group_aff_country = group_aff.split(',')[-1].strip()
+        for group in authors_groups_list_json:  # in authors maybe some group which devides authors
                 group_authors = list(
                     filter(lambda dict: dict['#name'] == 'author', group['$$']))
-                [authors_list_json.append((group_author, group_aff_country))
-                 for group_author in group_authors]
-        except IndexError:
-            bio_list = json_data['biographies']['content']
-            group_aff_country = [bio['$$'][0]['$$'][1]
-                                 ['_'].split(',')[-1] for bio in bio_list]
-            for group in authors_groups_list_json:  # in authors maybe some group which devides authors
-                group_authors = list(
-                    filter(lambda dict: dict['#name'] == 'author', group['$$']))
-                [authors_list_json.append((group_author, group_aff_country))
-                 for group_author in group_authors]
+                [authors_list_json.append(group_author) for group_author in group_authors]
 
-        for index, (author_json, affiliation_country) in enumerate(authors_list_json):
+        for index, author_json in enumerate(authors_list_json):
+            affiliation_country = affiliations_list[index % len(affiliations_list)]
             first_name = author_json['$$'][0]['_']
             last_name = author_json['$$'][1]['_']
             email_check = list(
@@ -384,3 +368,4 @@ class Search_page (Page):
 
     def export_bibtex(self, file):
         raise NotImplementedError
+Article(url = 'https://www.sciencedirect.com/science/article/pii/S1572665720308250').authors
