@@ -268,7 +268,10 @@ class Article(Page):
                 last_name = " "
             email_check = list(
                 filter(lambda dic: dic['#name'] == 'e-address', author_json['$$']))
-            email = None if not email_check else email_check[0]['_']
+            try:
+                email = None if not email_check else email_check[0]['_']
+            except KeyError:
+                email = email_check[0]['$$'][0]['_']
             """
             splited_aff = list(json_data['authors']['affiliations'].items())[0][1]['$$']
             affiliation_text = list(filter(lambda dic: dic['#name'] == 'textfn', splited_aff))[0]['_']
@@ -373,4 +376,3 @@ class Search_page (Page):
 
     def export_bibtex(self, file):
         raise NotImplementedError
-Article(url = 'https://www.sciencedirect.com/science/article/pii/S1572665720308250').authors

@@ -74,14 +74,14 @@ def scopus_status():
         'state': 'PROGRESS',
         'current': scopus_i,
         'total': scopus_total,
-        'status': scopus_i+'/'+scopus_total
+        'status': str(scopus_i)+'/'+str(scopus_total)
     }
 
     if time.time()-scopus_time > 4:
         scopus_time = time.time()
         scopus_i += 1
     if scopus_i == scopus_total:
-        response['result'] = scopus_total+' author got'
+        response['result'] = str(scopus_total)+' author got'
 
     return jsonify(response)
 

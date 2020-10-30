@@ -10,7 +10,7 @@
     <p style="color: red;">{{ message }}</p>
     {% endfor %}
     {% include 'search_form.html' %}
-    <!-- <input type="button" value="Start scopus" id='start_scopus_btn' onclick="start_scopus()"> -->
+    <input type="button" value="Start scopus" id='start_scopus_btn' onclick="start_scopus()">
     <hr>
     <h2>Search process statue</h2>
 
@@ -80,12 +80,10 @@
         // });
         function update_progress(status_url, nanobar, status_div) {
             // send GET request to status URL
-            console.log('UPDATE')
             $.getJSON(status_url, function (data) {
                 // update UI
                 percent = parseInt(data['current'] * 100 / data['total']);
                 nanobar.go(percent);
-                console.log('GO')
                 $(status_div.childNodes[1]).text(data['current'] + '/' + data['total'] + ' Pages');
                 $(status_div.childNodes[2]).html(data['status']);
                 if (data['state'] != 'PENDING' && data['state'] != 'PROGRESS') {

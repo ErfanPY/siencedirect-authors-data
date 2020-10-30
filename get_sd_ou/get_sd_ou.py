@@ -28,6 +28,7 @@ celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
 celery.conf.update(app.config)
 
 
+
 @celery.task(bind=True, name='scopus_search')
 def scopus_search(self):
     logger.debug('[get_sd_ou][scopus_search][IN] | ')
@@ -137,7 +138,7 @@ def start_search(self, **search_kwargs):
             update_search_offset(hash=page_hash, offset=page_offset)
             self.update_state(state='PROGRESS',
                               meta={'current': index_current_page, 'total': pages_count,
-                                  'status': f'Searching with this Fields: {cleaned_search_kwargs_reper}<br />{index_current_article} Article/{articles_count} <br /> {article.url}'})
+                                  'status': f'Searching with this Fields: {cleaned_search_kwargs_reper}<br />{index_current_article}/{articles_count} Article<br /> {article.url}'})
             count += 1
             time.sleep(0.1)
         first_page = False
