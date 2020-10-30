@@ -116,12 +116,12 @@ def start_search(self, **search_kwargs):
         **search_kwargs)
     first_page = True
     count = 0
-    cleaned_search_kwargs = {k:v for k, v in search_kwargs if v not in ['', ' ', [], None]}
-    cleaned_search_kwargs_reper  = " | ".join([': '.join([k, v]) for k, v in cleaned_search_kwargs])
+    cleaned_search_kwargs = {k:v for k, v in search_kwargs.items() if v not in ['', ' ', [], None]}
+    cleaned_search_kwargs_reper  = " | ".join([': '.join([k, str(v)]) for k, v in cleaned_search_kwargs.items()])
     for page_res in get_next_page(**search_kwargs):
         page, index_current_page, pages_count = page_res.values()
         page_offset = page.offset
-        page_hash = page.do_hash()
+        page_hash = page.db_hash()
 
         self.update_state(state='PROGRESS',
                           meta={'current': index_current_page, 'total': pages_count,
