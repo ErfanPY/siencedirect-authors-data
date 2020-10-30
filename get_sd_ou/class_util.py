@@ -273,7 +273,7 @@ class Article(Page):
             """
             authors_res[index] = {'first_name': first_name, 'last_name': last_name,
                                   'email': email, 'affiliation': affiliation_country}
-
+        print(4)
         return authors_res
 
     @property
