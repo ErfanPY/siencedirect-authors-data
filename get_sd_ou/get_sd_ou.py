@@ -116,7 +116,7 @@ def start_search(self, **search_kwargs):
         '[get_sd_ou][start_search][IN] | search_kwargs : %s', search_kwargs)
     db_connection = init_db()
     search_id, search_kwargs['offset'] = get_prev_serach_offset(
-        **search_kwargs, db_cnx=db_connection)
+        **search_kwargs, db_connection=db_connection)
     first_page = True
     count = 0
     cleaned_search_kwargs = {k:v for k, v in search_kwargs.items() if v not in ['', ' ', [], None]}

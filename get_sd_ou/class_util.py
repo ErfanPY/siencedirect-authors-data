@@ -250,6 +250,9 @@ class Article(Page):
         authors_res = {}
         authors_list_json = []
         affiliations_list = re.findall(r'country[^\]\}]*"([^\]\}]*)"', json_element)
+        if not affiliations_list :
+            #TODO
+            affiliations_list = [' ']
         authors_groups_list_json = json_data['authors']['content']
         authors_groups_list_json = list(
             filter(lambda dict: dict['#name'] == 'author-group', authors_groups_list_json))
