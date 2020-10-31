@@ -7,13 +7,27 @@ import logging
 logger = logging.getLogger('mainLogger')
 
 def init_db():
-    cnx = mysql.connector.connect(
-        host="localhost",
-        user="sciencedirect",
-        password="root",
-        port='3306'
-    )
+    cnx = mock_connection()
+    # cnx = mysql.connector.connect(
+    #     host="localhost",
+    #     user="sciencedirect",
+    #     password="root",
+    #     port='3306'
+    # )
     return cnx
+class mock_cursor:
+    def __init__(self, *args, **kwargs):
+        print('cursor init', args, kwargs)
+        self.lastrowid = -1
+    def __getattribute__(self, *args, **kwargs):
+        return lambda *args, **kwargs : print('cursor', '|', args, '|', kwargs)
+
+class mock_connection:
+    def __init__(self, *args, **kwargs):
+        print('connection init', args, kwargs)
+        self.cursor = mock_cursor()
+    def __getattribute__(self, *args, **kwargs):
+        return lambda *args, **kwargs : print('connection', '|', args, '|', kwargs)
 
 #executeScriptsFromFile('/root/dev/sciencedirect-authors-data/db/scripts/sciencedirect.sql', database.cursor)
 # cnx.commit()
