@@ -211,6 +211,7 @@ class Article(Page):
         logger.debug('[ Article ] __init__ | pii: %s', self.pii)
         super().__init__(url, *args, **kwargs)
         self.bibtex = ''
+        self.title = self.soup.select_one('.title-text').text
         if do_bibtex:
             self.bibtex = self.export_bibtex()
 
@@ -218,12 +219,12 @@ class Article(Page):
 
     def get_pii(self):
         return self.url.split('/')[-1].replace('#!', '')
-
+    
     def get_article_data(self, *needed_data):
         """ this is the main function of article it collect all data we need from an article (needed data is spesified from input) 
         it get authors name and email and affiliation from article 
         """
-        data = {'pii': self.pii, 'authors': self.authors, 'bibtex': self.bibtex}
+        data = {'pii': self.pii, 'authors': self.authors, 'bibtex': self.bibtex, 'title':self.title}
 
         return data
 
@@ -300,8 +301,7 @@ class Article(Page):
             self._authors = authors_objects
             logger.debug('[ Article ] authors: %s', self._authors)
         return self._authors
-
-
+    
 class Search_page (Page):
     def __init__(self, url='', show_per_page=100, **search_kwargs):
         if not url:

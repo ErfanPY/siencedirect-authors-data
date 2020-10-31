@@ -10,8 +10,9 @@ import time
 import random
 import logging
 from get_sd_ou import get_sd_ou
-from get_sd_ou.database_util import get_search_suggest, get_search, get_db_result
+from get_sd_ou.database_util import init_db, get_search_suggest, get_search, get_db_result
 from get_sd_ou.class_util import Search_page
+
 logger = logging.getLogger('mainLogger')
 logger.debug('[app] INIT')
 app = Flask(__name__)
@@ -25,6 +26,7 @@ celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
 
 celery.conf.update(app.config)
 
+db_connection = init_db()
 
 @app.route('/scopus_search', methods=['POST'])
 def scopus_search():
@@ -96,7 +98,7 @@ def db_start_search():
     logger.debug('[app] starting task')
     kwargs = dict(request.form)
     kwargs['offset'] = 0
-    database_result = get_db_result(**kwargs)
+    database_result = get_db_result(cnx=db_connection, **kwargs)
 
     return render_template('db_result.html', searchs=database_result)
     # return str(database_result)
@@ -105,11 +107,9 @@ def db_start_search():
 @app.route('/db_suggest', methods=['POST'])
 def db_suggest():
     logger.debug('[app][db_suggest][IN]')
-    print(request.data)
     inp = request.form.to_dict()
     input_key = inp['key']
     input_value = inp['value']
-    print('###', input_key, input_value)
     suggestion_list = get_search_suggest(input_key, input_value)
 
     logger.debug(
@@ -129,8 +129,6 @@ def db_suggest_all():
     for suggest in suggests:
         for key, value in suggest.items():
             form_value = form.get(key, False)
-            print('db_sugg####', key, "|", value, '|', not form_value,
-                  "|", form_value == ' ', "|", key in form)
             if value and key in form and value != form_value and value != ' ':
                 res[key].append(value)
 
@@ -186,3 +184,4 @@ def taskstatus(task_id):
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', debug=True)
+
