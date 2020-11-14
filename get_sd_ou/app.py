@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from flask import (Flask, request, render_template, session, flash,
-                   redirect, url_for, jsonify)
+                   redirect, url_for, jsonify, make_response)
 
 from flask_wtf import FlaskForm
 from wtforms import StringField, IntegerField, SubmitField
@@ -142,13 +142,23 @@ def longtask():
     kwargs = dict(request.form)
     kwargs['offset'] = 0
     task = get_sd_ou.start_search.apply_async(kwargs=kwargs, queue="main_search")
-    return jsonify({}), 202, {'Location': url_for('taskstatus', task_id=task.id)}
+    
+    prev_task_id_list = json.dumps(request.cookies.get('task_id_list'))
+    prev_task_id_list.append(task.id)
+
+    resp = make_response(jsonify({}), 202, {'Location': url_for('taskstatus', task_id=task.id)})
+    resp.set_cookie('task_id_list', prev_task_id_list)
+    return resp
 
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
     return render_template('index.html')
 
+@app.route('/update_all_searchs')
+def update_all_searchs():
+    task_id_list = json.dumps(request.cookies.get('task_id_list'))
+    return [url_for('taskstatus', task_id=task_id) for task_id in task_id_list]
 
 @app.route('/taskstatus/<task_id>')
 def taskstatus(task_id):

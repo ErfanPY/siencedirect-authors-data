@@ -17,6 +17,31 @@
     <div id="scopus_search_progress"></div>
     <div id="progress"></div>
     <script>
+        $(document).ready(function () {
+            update_all_searchs();
+        });
+        function update_all_searchs() {
+            $.ajax({
+                type: 'GET',
+                url: '/update_all_searchs',
+                success: function (tasks_status_url_list) {
+                    task_id_list.forEach(tasks_status_url => {
+                        add_running_task(tasks_status_url);
+                    });
+                }
+            })
+        }
+        function add_running_task(status_url){
+            div = $('<div class="progress"><div></div><div>0%</div><div>...</div><div>&nbsp;</div></div><hr>');
+            $('#progress').append(div);
+            document.getElementById('progress').scrollIntoView();
+            var nanobar = new Nanobar({
+                bg: '#44f',
+                target: div[0].childNodes[0]
+            });
+
+            update_progress(status_url, nanobar, div[0]);
+        }
         function start_long_task(form) {
             div = $('<div class="progress"><div></div><div>0%</div><div>...</div><div>&nbsp;</div></div><hr>');
             $('#progress').append(div);
