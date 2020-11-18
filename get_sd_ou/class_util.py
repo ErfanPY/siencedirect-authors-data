@@ -303,7 +303,7 @@ class Article(Page):
         return self._authors
     
 class Search_page (Page):
-    def __init__(self, url='', show_per_page=100, **search_kwargs):
+    def __init__(self, url='', show_per_page=100, start_offset=0, **search_kwargs):
         if not url:
             #url = f'https://www.sciencedirect.com/search?qs={title}&date={url}&authors={author}&affiliations={affiliation}&show={show_per_page}'
             url = 'https://www.sciencedirect.com/search?'
@@ -318,7 +318,7 @@ class Search_page (Page):
         self.search_kwargs = search_kwargs
         self.query = dict(self.url_parts.query)
         self.show_per_page = show_per_page
-        self.offset = self.query.get('offset', '0')
+        self.offset = self.query.get('offset', start_offset)
 
     def db_hash(self):
         search_kwargs = self.search_kwargs

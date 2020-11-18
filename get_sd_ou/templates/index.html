@@ -25,7 +25,8 @@
                 type: 'GET',
                 url: '/update_all_searchs',
                 success: function (tasks_status_url_list) {
-                    task_id_list.forEach(tasks_status_url => {
+                    console.log()
+                    JSON.parse(tasks_status_url_list).forEach(tasks_status_url => {
                         add_running_task(tasks_status_url);
                     });
                 }

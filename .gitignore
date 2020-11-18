@@ -7,4 +7,5 @@ tmpt*
 .vscode
 *.log
 *.pyc
+test.py
 exceptions.txt

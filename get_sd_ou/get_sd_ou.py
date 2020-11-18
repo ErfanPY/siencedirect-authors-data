@@ -47,12 +47,12 @@ def scopus_search(self):
     logger.debug('[get_sd_ou][scopus_search][OUT] | authors_count : %s', count)
 
 
-def get_next_page(queue_id='', **search_kwargs):
+def get_next_page(queue_id='', start_offset=0, **search_kwargs):
     logger.debug(
         '[get_sd_ou][get_next_page][IN] | search_kwargs : %s', search_kwargs)
     count = 0
     while True:
-        search_obj = Search_page(**search_kwargs)
+        search_obj = Search_page(start_offset, **search_kwargs)
         while search_obj:
             res = {'search_page': search_obj, 'index_current_page': search_obj.curent_page_num,
                    'page_count': search_obj.pages_count}
@@ -110,18 +110,51 @@ def insert_random_search():
                 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890', 10)), authors=authors)
             connect_search_article(search_id, article_id)
 
+@celery.task(bind=True, name='start_multi_search')
+def start_multi_search(self, worker_count=1, worker_offset_count=100, **search_kwargs):
+    logger.debug('[get_sd_ou][start_multi_search][IN] | search_kwargs : %s', search_kwargs)
+    db_connection = init_db()
+    
+    search_id, offset = get_prev_serach_offset(
+        **search_kwargs, db_connection=db_connection)
+    
+    start_search.apply_async(kwargs={"write_offset":False, 'search_id':search_id,
+                                    'start_offset':offset, 'db_connection':db_connection,
+                                    **search_kwargs},
+                            queue="main_search")
+    
+    logger.debug('[get_sd_ou][start_multi_search][MIDDLE] | First task started | search_kwargs : %s', search_kwargs)
+
+    for i in range(worker_count-1):
+        start_search.apply_async(kwargs={"write_offset":False, 'search_id':search_id,
+                                    'start_offset':offset+(worker_offset_count*(i+1)), 'db_connection':db_connection,
+                                    **search_kwargs},
+                            queue="main_search")
+        logger.debug('[get_sd_ou][start_multi_search][MIDDLE] | Another task started | search_kwargs : %s, i : %s', search_kwargs, i)
+
+
 @celery.task(bind=True, name='start_search')
-def start_search(self, **search_kwargs):
+def start_search(self, write_offset=True, search_id=0, start_offset=0, db_connection=None, **search_kwargs):
     logger.debug(
         '[get_sd_ou][start_search][IN] | search_kwargs : %s', search_kwargs)
-    db_connection = init_db()
-    search_id, search_kwargs['offset'] = get_prev_serach_offset(
-        **search_kwargs, db_connection=db_connection)
+    
+    db_connection = db_connection if db_connection else init_db()
+
+    if not start_offset:
+        search_id, search_kwargs['offset'] = get_prev_serach_offset(
+            **search_kwargs, db_connection=db_connection)
+    else :
+        search_id = search_id
+        search_kwargs['offset'] = start_offset
+    
+    #TODO: Don't write offset to db 
+
     first_page = True
     count = 0
     cleaned_search_kwargs = {k:v for k, v in search_kwargs.items() if v not in ['', ' ', [], None]}
     cleaned_search_kwargs_reper  = " | ".join([': '.join([k, str(v)]) for k, v in cleaned_search_kwargs.items()])
-    for page_res in get_next_page(**search_kwargs):
+    
+    for page_res in get_next_page(start_offset=start_offset, **search_kwargs):
         page, index_current_page, pages_count = page_res.values()
         page_offset = page.offset
         page_hash = page.db_hash()
@@ -129,15 +162,23 @@ def start_search(self, **search_kwargs):
         self.update_state(state='PROGRESS',
                           meta={'current': index_current_page, 'total': pages_count,
                                 'status': f'Getting page articles\n{page.url}'})
+        
         if page == 'done':
             return 'DONE'
+
         for article_res in get_next_article(page):
+        
             article, index_current_article, articles_count = article_res.values()
             article_data = article.get_article_data()
             article_id = insert_article_data(**article_data, cnx=db_connection)
+        
             connect_search_article(search_id, article_id, cnx=db_connection)
+        
             page_offset = str(int(page_offset)+1)
-            update_search_offset(hash=page_hash, offset=page_offset, cnx=db_connection)
+        
+            if write_offset:
+                update_search_offset(hash=page_hash, offset=page_offset, cnx=db_connection)
+        
             self.update_state(state='PROGRESS',
                               meta={'current': index_current_page, 'total': pages_count,
                                   'status': f'Searching with this Fields: {cleaned_search_kwargs_reper}<br />{index_current_article}/{articles_count} Article<br /> {article.url}'})

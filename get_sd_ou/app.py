@@ -6,6 +6,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, IntegerField, SubmitField
 
 from celery import Celery
+import json
 import time
 import random
 import logging
@@ -143,11 +144,12 @@ def longtask():
     kwargs['offset'] = 0
     task = get_sd_ou.start_search.apply_async(kwargs=kwargs, queue="main_search")
     
-    prev_task_id_list = json.dumps(request.cookies.get('task_id_list'))
+    cookie_data = request.cookies.get('task_id_list')
+    prev_task_id_list = [] if not cookie_data else json.loads(cookie_data)
     prev_task_id_list.append(task.id)
 
     resp = make_response(jsonify({}), 202, {'Location': url_for('taskstatus', task_id=task.id)})
-    resp.set_cookie('task_id_list', prev_task_id_list)
+    resp.set_cookie('task_id_list', json.dumps(prev_task_id_list))
     return resp
 
 
@@ -157,8 +159,8 @@ def index():
 
 @app.route('/update_all_searchs')
 def update_all_searchs():
-    task_id_list = json.dumps(request.cookies.get('task_id_list'))
-    return [url_for('taskstatus', task_id=task_id) for task_id in task_id_list]
+    task_id_list = json.loads(request.cookies.get('task_id_list'))
+    return json.dumps([url_for('taskstatus', task_id=task_id) for task_id in task_id_list])
 
 @app.route('/taskstatus/<task_id>')
 def taskstatus(task_id):
