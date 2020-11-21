@@ -169,7 +169,7 @@ def start_search(self, write_offset=True, search_id=0, start_offset=0, db_connec
 
         self.update_state(state='PROGRESS',
                           meta={'current': index_current_page, 'total': pages_count,
-                                'status': f'Getting page articles\n{page.url}'})
+                                'status': f'Getting page articles\n{page.url}', 'form':'form'})
         
         if page == 'done':
             return 'DONE'

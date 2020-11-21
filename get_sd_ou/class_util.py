@@ -203,6 +203,12 @@ class Author(dict):
     def __getattr__(self, key):
         return(self[key])
 
+class json_parse:
+    def __init__(self, json_data):
+        self.json_data = json_data
+    
+    def filter(self, filter_by):
+        pass
 
 class Article(Page):
     def __init__(self, url, do_bibtex=False, *args, **kwargs):
@@ -262,8 +268,10 @@ class Article(Page):
                 group_authors = list(
                     filter(lambda dict: dict['#name'] == 'author', group['$$']))
                 [authors_list_json.append(group_author) for group_author in group_authors]
-
+        affiliations_data_dict = json_data['authors']['affiliations']
         for index, author_json in enumerate(authors_list_json):
+            reference_list = list(filter(lambda dict: dict['#name'] == 'cross-ref', author_json['$$']))
+            affiliations_id_list = [ref['$']['refid'] for ref in reference_list]
             affiliation_country = affiliations_list[index % len(affiliations_list)]
             first_name = author_json['$$'][0]['_']
             try:
