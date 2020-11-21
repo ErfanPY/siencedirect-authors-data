@@ -1,18 +1,20 @@
 #!/usr/bin/env python3
-from flask import (Flask, request, render_template, session, flash,
-                   redirect, url_for, jsonify, make_response)
-
-from flask_wtf import FlaskForm
-from wtforms import StringField, IntegerField, SubmitField
-
-from celery import Celery
 import json
-import time
-import random
 import logging
+import random
+import time
+
+import redis
+from celery import Celery
+from flask import (Flask, flash, jsonify, make_response, redirect,
+                   render_template, request, session, url_for)
+from flask_wtf import FlaskForm
+from wtforms import IntegerField, StringField, SubmitField
+
 from get_sd_ou import get_sd_ou
-from get_sd_ou.database_util import init_db, get_search_suggest, get_search, get_db_result
 from get_sd_ou.class_util import Search_page
+from get_sd_ou.database_util import (get_db_result, get_search,
+                                     get_search_suggest, init_db)
 
 logger = logging.getLogger('mainLogger')
 logger.debug('[app] INIT')
@@ -26,6 +28,8 @@ app.config['CELERY_IGNORE_RESULT'] = False
 celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
 
 celery.conf.update(app.config)
+
+redisClient = redis.StrictRedis(host='localhost', port=6379, db=0)
 
 db_connection = init_db()
 
@@ -136,6 +140,28 @@ def db_suggest_all():
     logger.debug('[app][db_suggest][OUT] | res : %s', res)
     return jsonify(res)
 
+@app.route('/start_multi_search', methods=['POST'])
+def multi_search():
+    data = dict(request.form)
+    search_kwargs = {}
+
+    for item in data.get('form', '').split("&"):
+        key, value = item.split('=')
+        search_kwargs[key] = value
+
+    worker_count = int(data.get('worker_count', 1))
+
+    task = get_sd_ou.start_multi_search.apply_async(kwargs={"worker_count":worker_count, **search_kwargs}, queue="main_search")
+
+    task_id_list = task.get()
+
+    cookie_data = request.cookies.get('task_id_list')
+    prev_task_id_list = [] if not cookie_data else json.loads(cookie_data)
+    [prev_task_id_list.append(task_id) for task_id in task_id_list]
+
+    resp = make_response()
+    resp.set_cookie('task_id_list', json.dumps(prev_task_id_list))
+    return resp
 
 @app.route('/longtask', methods=['POST'])
 def longtask():
@@ -148,10 +174,25 @@ def longtask():
     prev_task_id_list = [] if not cookie_data else json.loads(cookie_data)
     prev_task_id_list.append(task.id)
 
-    resp = make_response(jsonify({}), 202, {'Location': url_for('taskstatus', task_id=task.id)})
+    resp = make_response(jsonify({}), 202, {'Location': url_for('taskstatus', task_id=task.id), 'task_id': task.id})
     resp.set_cookie('task_id_list', json.dumps(prev_task_id_list))
     return resp
 
+@app.route('/stop_task', methods=['POST'])
+def stop_task():
+    task_id = dict(request.form)['task_id']
+
+    get_sd_ou.start_search.AsyncResult(task_id).revoke(terminate=True, signal='SIGKILL')
+
+    redisClient.sadd("celery_revoke", task_id)
+    
+    cookie_data = request.cookies.get('task_id_list')
+    prev_task_id_list = [] if not cookie_data else json.loads(cookie_data)
+    prev_task_id_list.remove(task_id)
+
+    resp = make_response()
+    resp.set_cookie('task_id_list', json.dumps(prev_task_id_list))
+    return resp
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -159,7 +200,7 @@ def index():
 
 @app.route('/update_all_searchs')
 def update_all_searchs():
-    task_id_list = json.loads(request.cookies.get('task_id_list'))
+    task_id_list = json.loads(request.cookies.get('task_id_list', '{}'))
     return json.dumps([url_for('taskstatus', task_id=task_id) for task_id in task_id_list])
 
 @app.route('/taskstatus/<task_id>')
@@ -195,5 +236,5 @@ def taskstatus(task_id):
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', debug=True)
+    app.run(host='0.0.0.0')
 

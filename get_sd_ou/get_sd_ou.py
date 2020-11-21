@@ -5,10 +5,11 @@ import queue
 import threading
 import logging
 
-from .class_util import Article, Search_page, Author
-from .database_util import (init_db, insert_article_data, insert_search,
+from get_sd_ou.class_util import Article, Search_page, Author
+from get_sd_ou.database_util import (init_db, insert_article_data, insert_search,
                             get_id_less_authors, get_search, update_author_scopus,
-                            update_search_offset, connect_search_article)
+                            update_search_offset, connect_search_article, is_article_exist)
+import redis
 from flask import Flask
 from celery import Celery
 
@@ -19,14 +20,15 @@ do_bibtex = False
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'top top secret!'
 
-app.config['CELERY_BROKER_URL'] = 'redis://0.0.0.0:6379/0'
-app.config['CELERY_RESULT_BACKEND'] = 'redis://0.0.0.0:6379/0'
+app.config['CELERY_BROKER_URL'] = 'redis://127.0.0.1:6379/0'
+app.config['CELERY_RESULT_BACKEND'] = 'redis://127.0.0.1:6379/0'
 app.config['CELERY_IGNORE_RESULT'] = False
 
 celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
 
 celery.conf.update(app.config)
 
+redisClient = redis.StrictRedis(host='localhost', port=6379, db=0)
 
 
 @celery.task(bind=True, name='scopus_search')
@@ -52,7 +54,7 @@ def get_next_page(queue_id='', start_offset=0, **search_kwargs):
         '[get_sd_ou][get_next_page][IN] | search_kwargs : %s', search_kwargs)
     count = 0
     while True:
-        search_obj = Search_page(start_offset, **search_kwargs)
+        search_obj = Search_page(start_offset=start_offset, **search_kwargs)
         while search_obj:
             res = {'search_page': search_obj, 'index_current_page': search_obj.curent_page_num,
                    'page_count': search_obj.pages_count}
@@ -118,27 +120,34 @@ def start_multi_search(self, worker_count=1, worker_offset_count=100, **search_k
     search_id, offset = get_prev_serach_offset(
         **search_kwargs, db_connection=db_connection)
     
-    start_search.apply_async(kwargs={"write_offset":False, 'search_id':search_id,
-                                    'start_offset':offset, 'db_connection':db_connection,
+    db_connection.close()
+
+    task_id_list = []
+
+    logger.debug('[get_sd_ou][start_multi_search][MIDDLE] | Prev search got | search_id : %s, offset : %s', search_id, offset)
+    task = start_search.apply_async(kwargs={"write_offset":False, 'search_id':search_id,
+                                    'start_offset':offset,
                                     **search_kwargs},
                             queue="main_search")
-    
+    task_id_list.append(task.id)
     logger.debug('[get_sd_ou][start_multi_search][MIDDLE] | First task started | search_kwargs : %s', search_kwargs)
 
     for i in range(worker_count-1):
-        start_search.apply_async(kwargs={"write_offset":False, 'search_id':search_id,
-                                    'start_offset':offset+(worker_offset_count*(i+1)), 'db_connection':db_connection,
+        task = start_search.apply_async(kwargs={"write_offset":False, 'search_id':search_id,
+                                    'start_offset':offset+(worker_offset_count*(i+1)),
                                     **search_kwargs},
                             queue="main_search")
+        task_id_list.append(task.id)
         logger.debug('[get_sd_ou][start_multi_search][MIDDLE] | Another task started | search_kwargs : %s, i : %s', search_kwargs, i)
-
+    return task_id_list
 
 @celery.task(bind=True, name='start_search')
 def start_search(self, write_offset=True, search_id=0, start_offset=0, db_connection=None, **search_kwargs):
     logger.debug(
         '[get_sd_ou][start_search][IN] | search_kwargs : %s', search_kwargs)
-    
     db_connection = db_connection if db_connection else init_db()
+
+    task_id = self.request.id.__str__()
 
     if not start_offset:
         search_id, search_kwargs['offset'] = get_prev_serach_offset(
@@ -153,7 +162,6 @@ def start_search(self, write_offset=True, search_id=0, start_offset=0, db_connec
     count = 0
     cleaned_search_kwargs = {k:v for k, v in search_kwargs.items() if v not in ['', ' ', [], None]}
     cleaned_search_kwargs_reper  = " | ".join([': '.join([k, str(v)]) for k, v in cleaned_search_kwargs.items()])
-    
     for page_res in get_next_page(start_offset=start_offset, **search_kwargs):
         page, index_current_page, pages_count = page_res.values()
         page_offset = page.offset
@@ -166,9 +174,18 @@ def start_search(self, write_offset=True, search_id=0, start_offset=0, db_connec
         if page == 'done':
             return 'DONE'
 
-        for article_res in get_next_article(page):
-        
+        for article_res in get_next_article(page):       
+              
+            if bytes(task_id, encoding='UTF-8') in redisClient.smembers('celery_revoke'):
+                logger.debug( '[get_sd_ou][start_search][MIDDLE] Task removed | task_id : %s, search_kwargs : %s', task_id, search_kwargs)
+                return 0
+
             article, index_current_article, articles_count = article_res.values()
+            
+            if is_article_exist(article.pii, cnx=db_connection):
+                logger.debug( '[get_sd_ou][start_search][MIDDLE] Article exist | pii : %s', article.pii)
+                continue
+
             article_data = article.get_article_data()
             article_id = insert_article_data(**article_data, cnx=db_connection)
         
@@ -183,7 +200,7 @@ def start_search(self, write_offset=True, search_id=0, start_offset=0, db_connec
                               meta={'current': index_current_page, 'total': pages_count,
                                   'status': f'Searching with this Fields: {cleaned_search_kwargs_reper}<br />{index_current_article}/{articles_count} Article<br /> {article.url}'})
             count += 1
-            time.sleep(0.1)
+            time.sleep(1)
         first_page = False
     logger.debug('[get_sd_ou][start_search][OUT] | count : %s', count)
 

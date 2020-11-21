@@ -26,6 +26,9 @@ mysql -uroot -p < ./db/scripts/sciencedirect_complete_clear.sql
 
 # CELERY
 celery -A get_sd_ou.get_sd_ou.celery worker -Q main_search --loglevel=INFO -E -P eventlet -c 100  
+
+celery -A get_sd_ou.get_sd_ou.celery worker -Q main_search --loglevel=DEBUG -E -P eventlet -c 100  > log.log
+
 celery -A get_sd_ou.get_sd_ou.celery worker -Q scopus_search --loglevel=INFO -E
 
 # PYTHON

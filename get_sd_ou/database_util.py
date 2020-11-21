@@ -7,6 +7,7 @@ import logging
 logger = logging.getLogger('mainLogger')
 
 def init_db():
+    logger.debug('[database_util][init_db][IN]')
     #cnx = mock_connection()
     cnx = mysql.connector.connect(
         host="localhost",
@@ -14,6 +15,8 @@ def init_db():
         password="root",
         port='3306'
     )
+    logger.debug('[database_util][init_db][OUT] | db_connection : %s', cnx)
+
     return cnx
 class mock_cursor:
     def __init__(self, *args, **kwargs):
@@ -48,7 +51,7 @@ def insert_article(pii, title='', bibtex='', cnx=None, **kwargs):
     cursor = cnx.cursor(buffered=True)
     sql = "INSERT IGNORE INTO sciencedirect.articles (pii, title, bibtex) VALUES (%s, %s, %s);"
     val = (pii, title, bibtex)
-    logger.debug('[database_util][insert_article][IN] | pii : %s', pii)
+    logger.debug('[database_util][insert_article][IN] | pii: %s, sql: %s, val: %s', pii, sql, val)
     cursor.execute(sql, val)
     cnx.commit()
     article_id = cursor.lastrowid
@@ -302,7 +305,14 @@ def get_db_result(cnx=None, **search_kwargs):
     logger.debug('[database_util][get_db_result][OUT] | searchs : %s', searchs)
     return searchs
 
-
+def is_article_exist(pii, cnx=None):
+    cursor = cnx.cursor(buffered=True)
+    sql = "SELECT EXISTS (SELECT 1 FROM sciencedirect.article WHERE pii='%s' LIMIT 1)"
+    val = (pii, )
+    cursor.execute(sql, val)
+    result = cursor.fetchone()
+    cursor.reset() 
+    
 def is_row_exist(table, column, value, cnx=None):
     print(f'is row exc {cnx}')
     cursor = cnx.cursor(buffered=True)

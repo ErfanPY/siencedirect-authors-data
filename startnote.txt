@@ -1,3 +1,7 @@
+#KILL TASK
+>>> from celery.task.control import revoke
+>>> revoke(task_id, terminate=True)
+
 #REDIS
 docker run --name myredis -p 6379:6379 redis redis-server --save "" --port 6379
 redis-cli monitor #For logs

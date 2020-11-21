@@ -1,5 +1,4 @@
-{% extends "base.html" %}
-{% block content %}
+{% extends "base.html" %} {% block content %}
 
 <script src="//cdnjs.cloudflare.com/ajax/libs/nanobar/0.2.1/nanobar.min.js"></script>
 </head>
@@ -8,43 +7,73 @@
     <h1>Siencedirect search</h1>
     {% for message in get_flashed_messages() %}
     <p style="color: red;">{{ message }}</p>
-    {% endfor %}
-    {% include 'search_form.html' %}
+    {% endfor %} {% include 'search_form.html' %}
     <input type="button" value="Start scopus" id='start_scopus_btn' onclick="start_scopus()">
+
+    <input type="text" id="worker_count">
+    <input type="button" value="Start Multi Worker" id="start_multi_search" onclick="start_multi_search()">
+
     <hr>
     <h2>Search process statue</h2>
 
     <div id="scopus_search_progress"></div>
     <div id="progress"></div>
     <script>
-        $(document).ready(function () {
+        $(document).ready(function() {
             update_all_searchs();
         });
+
         function update_all_searchs() {
+
             $.ajax({
                 type: 'GET',
                 url: '/update_all_searchs',
-                success: function (tasks_status_url_list) {
-                    console.log()
+                success: function(tasks_status_url_list) {
                     JSON.parse(tasks_status_url_list).forEach(tasks_status_url => {
                         add_running_task(tasks_status_url);
                     });
                 }
             })
         }
-        function add_running_task(status_url){
-            div = $('<div class="progress"><div></div><div>0%</div><div>...</div><div>&nbsp;</div></div><hr>');
+        // button in progress
+        // task_id as a html property
+        // 
+        function add_running_task(status_url) {
+            div = $('<div class="progress"><div></div><div>0%</div><div>...</div><div></div><div>&nbsp;</div></div><hr>');
             $('#progress').append(div);
             document.getElementById('progress').scrollIntoView();
             var nanobar = new Nanobar({
                 bg: '#44f',
                 target: div[0].childNodes[0]
             });
-
+            var task_id = status_url.split('/').pop()
+            div[0].setAttribute('task_id', task_id);
+            div[0].childNodes[4].innerHTML = `<button onclick="stop_task('${task_id}')">Stop this task!</button>`
             update_progress(status_url, nanobar, div[0]);
         }
+
+        function start_multi_search() {
+            var form = $("#search-advanced-form").serialize();
+            var worker_count = $("input#worker_count").val();
+
+            $.ajax({
+                type: 'POST',
+                url: '/start_multi_search',
+                data: {
+                    form: form,
+                    worker_count: worker_count
+                },
+                success: function() {
+                    update_all_searchs();
+                },
+                error: function() {
+                    alert('Unexpected error');
+                }
+            });
+        }
+
         function start_long_task(form) {
-            div = $('<div class="progress"><div></div><div>0%</div><div>...</div><div>&nbsp;</div></div><hr>');
+            div = $('<div class="progress"><div></div><div>0%</div><div>...</div><div></div><div>&nbsp;</div></div><hr>');
             $('#progress').append(div);
             document.getElementById('progress').scrollIntoView();
             var nanobar = new Nanobar({
@@ -58,11 +87,31 @@
                 type: 'POST',
                 url: '/longtask',
                 data: form.serialize(),
-                success: function (data, status, request) {
+                success: function(data, status, request) {
                     status_url = request.getResponseHeader('Location');
+                    var task_id = request.getResponseHeader('task_id')
+                    div[0].setAttribute('task_id', task_id);
+                    div[0].childNodes[4].innerHTML = `<button onclick="stop_task('${task_id}')">Stop this task!</button>`
                     update_progress(status_url, nanobar, div[0]);
                 },
-                error: function () {
+                error: function() {
+                    alert('Unexpected error');
+                }
+            });
+        }
+
+        function stop_task(task_id) {
+            $.ajax({
+                type: 'POST',
+                url: '/stop_task',
+                data: {
+                    task_id: task_id
+                },
+                success: function() {
+                    // remove html
+                    $(`div[task_id=${task_id}]`).remove()
+                },
+                error: function() {
                     alert('Unexpected error');
                 }
             });
@@ -73,11 +122,11 @@
             $.ajax({
                 type: 'POST',
                 url: '/scopus_search',
-                success: function (data, status, request) {
+                success: function(data, status, request) {
                     status_url = request.getResponseHeader('Location');
                     update_scopus_progress(status_url);
                 },
-                error: function () {
+                error: function() {
                     alert('Unexpected error');
                 }
             });
@@ -86,17 +135,16 @@
         function update_scopus_progress(status_url) {
             // send GET request to status URL
 
-            $.getJSON(status_url, function (data) {
+            $.getJSON(status_url, function(data) {
                 $('#scopus_search_progress').text(data['status']);
-                setTimeout(function () {
+                setTimeout(function() {
                     update_scopus_progress(status_url);
                 }, 2000);
             });
         }
 
-        $("#search-advanced-form").submit(function (e) {
+        $("#search-advanced-form").submit(function(e) {
             e.preventDefault(); // avoid to execute the actual submit of the form.
-            console.log($('#search-advanced-form').serialize());
             var form = $(this);
 
             start_long_task(form)
@@ -106,23 +154,27 @@
         // });
         function update_progress(status_url, nanobar, status_div) {
             // send GET request to status URL
-            $.getJSON(status_url, function (data) {
+            $.getJSON(status_url, function(data) {
                 // update UI
                 percent = parseInt(data['current'] * 100 / data['total']);
                 nanobar.go(percent);
                 $(status_div.childNodes[1]).text(data['current'] + '/' + data['total'] + ' Pages');
-                $(status_div.childNodes[2]).html(data['status']);
+
+                //  TODO: <button
+                // status_div.attr('task_id'); 
+
+                $(status_div.childNodes[2]).html(data['status'] + '');
                 if (data['state'] != 'PENDING' && data['state'] != 'PROGRESS') {
                     if ('result' in data) {
                         // show result
                         $(status_div.childNodes[3]).text('Result: ' + data['result']);
                     } else {
                         // something unexpected happened
-                        $(status_div.childNodes[3]).text('Result: ' + data['state']);
+                        $(status_div.childNodes[3]).append('Result: ' + data['state']);
                     }
                 } else {
                     // rerun in 2 seconds
-                    setTimeout(function () {
+                    setTimeout(function() {
                         update_progress(status_url, nanobar, status_div);
                     }, 2000);
                 }
