@@ -98,7 +98,7 @@ def insert_random_search():
     term = ['nano', 'bio', 'data', 'game', 'tech', 'computer', 'micro', 'AI']
     auth = ['ali', 'erfan', 'bagher', 'sara',
             'babak', 'mohamad', 'jack', 'jef']
-    for search in range(20):
+    for _search in range(20):
         a = random.choice(aff)
         b = random.randrange(1990, 2020)
         c = random.choice(term)
@@ -158,7 +158,7 @@ def start_search(self, write_offset=True, search_id=0, start_offset=0, db_connec
     
     #TODO: Don't write offset to db 
 
-    first_page = True
+    _first_page = True
     count = 0
     cleaned_search_kwargs = {k:v for k, v in search_kwargs.items() if v not in ['', ' ', [], None]}
     cleaned_search_kwargs_reper  = " | ".join([': '.join([k, str(v)]) for k, v in cleaned_search_kwargs.items()])
@@ -201,7 +201,7 @@ def start_search(self, write_offset=True, search_id=0, start_offset=0, db_connec
                                   'status': f'Searching with this Fields: {cleaned_search_kwargs_reper}<br />{index_current_article}/{articles_count} Article<br /> {article.url}'})
             count += 1
             time.sleep(1)
-        first_page = False
+        _first_page = False
     logger.debug('[get_sd_ou][start_search][OUT] | count : %s', count)
 
 

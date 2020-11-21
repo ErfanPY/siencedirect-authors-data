@@ -307,10 +307,10 @@ def get_db_result(cnx=None, **search_kwargs):
 
 def is_article_exist(pii, cnx=None):
     cursor = cnx.cursor(buffered=True)
-    sql = "SELECT EXISTS (SELECT 1 FROM sciencedirect.article WHERE pii='%s' LIMIT 1)"
+    sql = "SELECT EXISTS (SELECT 1 FROM sciencedirect.article WHERE pii='%s' LIMIT 1)" # ADD s to article to fix I changed for some test :-)
     val = (pii, )
     cursor.execute(sql, val)
-    result = cursor.fetchone()
+    _result = cursor.fetchone()
     cursor.reset() 
     
 def is_row_exist(table, column, value, cnx=None):

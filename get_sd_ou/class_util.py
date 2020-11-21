@@ -268,10 +268,10 @@ class Article(Page):
                 group_authors = list(
                     filter(lambda dict: dict['#name'] == 'author', group['$$']))
                 [authors_list_json.append(group_author) for group_author in group_authors]
-        affiliations_data_dict = json_data['authors']['affiliations']
+        _affiliations_data_dict = json_data['authors']['affiliations']
         for index, author_json in enumerate(authors_list_json):
             reference_list = list(filter(lambda dict: dict['#name'] == 'cross-ref', author_json['$$']))
-            affiliations_id_list = [ref['$']['refid'] for ref in reference_list]
+            _affiliations_id_list = [ref['$']['refid'] for ref in reference_list]
             affiliation_country = affiliations_list[index % len(affiliations_list)]
             first_name = author_json['$$'][0]['_']
             try:

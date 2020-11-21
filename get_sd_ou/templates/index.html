@@ -73,6 +73,21 @@
             });
         }
 
+        function restart_task(task_id) {
+            $.ajax({
+                type: 'POST',
+                url: `/restart_task/${task_id}`,
+                success: function(data, status, request) {
+                    stop_task(task_id);
+                    status_url = request.getResponseHeader('Location');
+                    add_running_task(status_url);
+                },
+                error: function() {
+                    alert('Unexpected error');
+                }
+            });
+        }
+
         function start_long_task(form) {
             // send ajax POST request to start background job
             $.ajax({
@@ -92,7 +107,7 @@
         function stop_task(task_id) {
             $.ajax({
                 type: 'POST',
-                url: '/stop_task',
+                url: `/stop_task/${task_id}`,
                 data: {
                     task_id: task_id
                 },
@@ -144,6 +159,7 @@
         // });
         function update_progress(status_url, nanobar, status_div, new_task = false) {
             // send GET request to status URL
+            task_id = status_url.split('/').pop()
             $.getJSON(status_url, function(data) {
                 // update UI
                 percent = parseInt(data['current'] * 100 / data['total']);
@@ -164,6 +180,7 @@
                         // something unexpected happened
                         $(status_div.childNodes[5]).toggle();
                         $(status_div.childNodes[3]).text('Result: ' + data['state']);
+                        $(status_div.childNodes[5]).after(`<button onclick="restart_task('${task_id}')">Restart task</button>`)
                     }
                 } else {
                     // rerun in 2 seconds

@@ -1,17 +1,20 @@
+import redis
+from celery import Celery
+
+from get_sd_ou.get_sd_ou import start_multi_search
+from get_sd_ou.get_sd_ou import start_search, start_multi_search
+
 import logging
 
 logger = logging.getLogger('mainLogger')
 
 class redis_test:
     def init(self):
-        import redis
         self.redisClient = redis.StrictRedis(host='localhost', port=6379, db=0)
 
         self.colorSet = "Colors"
     
     def add_test(self):
-        
-
         self.redisClient.sadd(self.colorSet, "Red")
         self.redisClient.sadd(self.colorSet, "Orange")
         self.redisClient.sadd(self.colorSet, "Yellow")
@@ -21,8 +24,6 @@ class redis_test:
         self.redisClient.sadd(self.colorSet, "violet")
 
     def get_test(self):
-        import redis
-
         self.redisClient = redis.StrictRedis(host='localhost', port=6379, db=0)
 
         self.colorSet = "Colors"
@@ -39,10 +40,6 @@ class redis_test:
 
 class celery_test:
     def __init__(self):
-        from get_sd_ou.get_sd_ou import start_search, start_multi_search
-
-        from celery import Celery
-
         self.config = {}
         self.config['SECRET_KEY'] = 'top top secret!'
 
@@ -56,7 +53,7 @@ class celery_test:
 
     def multiple_search(self):
         search_kwargs = {'qs':'nano'}
-        a = start_multi_search.apply_async(kwargs={"worker_count":3, **search_kwargs},
+        _ = start_multi_search.apply_async(kwargs={"worker_count":3, **search_kwargs},
                                     queue="main_search")
 
 class class_util_test:

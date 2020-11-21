@@ -142,7 +142,7 @@ def db_suggest_all():
 
 @app.route('/download_db')
 def download_db():
-    a  = '<a href="/return-files/" target="blank"><button>Download!</button></a>'
+    _  = '<a href="/return-files/" target="blank"><button>Download!</button></a>'
     # Generate sql file (or any prefered file format)
     return send_file('/var/www/PythonProgramming/PythonProgramming/static/images/python.jpg', attachment_filename='python.jpg')
 
@@ -173,12 +173,24 @@ def multi_search():
 
     task_id_list = task.get()
 
-    cookie_data = request.cookies.get('task_id_list')
+    cookie_data = request.cookies.get('task_info_list')
     prev_task_info_list = [] if not cookie_data else json.loads(cookie_data)
     [prev_task_info_list.append(f'{task_id}|{json.dumps(data)}') for task_id in task_id_list]
 
     resp = make_response()
-    resp.set_cookie('task_id_list', json.dumps(prev_task_info_list))
+    resp.set_cookie('task_info_list', json.dumps(prev_task_info_list))
+    return resp
+
+def start_task(**search_kwargs):
+    task = get_sd_ou.start_search.apply_async(kwargs=search_kwargs, queue="main_search")
+    
+    cookie_data = request.cookies.get('task_info_list')
+    prev_task_info_list = [] if not cookie_data else json.loads(cookie_data)
+    prev_task_info_list.append(f'{task.id}|{json.dumps(search_kwargs)}')
+
+    resp = make_response(jsonify({}), 202, {'Location': url_for('taskstatus', task_id=task.id), 'task_id': task.id})
+    resp.set_cookie('task_info_list', json.dumps(prev_task_info_list))
+
     return resp
 
 @app.route('/longtask', methods=['POST'])
@@ -186,30 +198,23 @@ def longtask():
     logger.debug('[app] starting task')
     kwargs = dict(request.form)
     kwargs['offset'] = 0
-    task = get_sd_ou.start_search.apply_async(kwargs=kwargs, queue="main_search")
     
-    cookie_data = request.cookies.get('task_id_list')
-    prev_task_info_list = [] if not cookie_data else json.loads(cookie_data)
-    prev_task_info_list.append(f'{task.id}|{json.dumps(kwargs)}')
+    response = start_task(**kwargs)
+    
+    return response
 
-    resp = make_response(jsonify({}), 202, {'Location': url_for('taskstatus', task_id=task.id), 'task_id': task.id})
-    resp.set_cookie('task_id_list', json.dumps(prev_task_info_list))
-    return resp
-
-@app.route('/stop_task', methods=['POST'])
-def stop_task():
-    task_id = dict(request.form)['task_id']
-
+@app.route('/stop_task/<task_id>', methods=['POST'])
+def stop_task(task_id):
     get_sd_ou.start_search.AsyncResult(task_id).revoke(terminate=True)
 
     redisClient.sadd("celery_revoke", task_id)
     
-    cookie_data = request.cookies.get('task_id_list')
+    cookie_data = request.cookies.get('task_info_list')
     prev_task_info_list = [] if not cookie_data else json.loads(cookie_data)
     [prev_task_info_list.remove(task_info) for task_info in prev_task_info_list if task_id in task_info]
 
     resp = make_response()
-    resp.set_cookie('task_id_list', json.dumps(prev_task_info_list))
+    resp.set_cookie('task_info_list', json.dumps(prev_task_info_list))
     return resp
 
 @app.route('/', methods=['GET', 'POST'])
@@ -218,8 +223,18 @@ def index():
 
 @app.route('/update_all_searchs')
 def update_all_searchs():
-    task_id_list = json.loads(request.cookies.get('task_id_list', '{}'))
-    return json.dumps([url_for('taskstatus', task_id=task_id.split('|')[0]) for task_id in task_id_list])
+    task_info_list = json.loads(request.cookies.get('task_info_list', '{}'))
+    return json.dumps([url_for('taskstatus', task_id=task_id.split('|')[0]) for task_id in task_info_list])
+
+@app.route('/restart_task/<task_id>', methods=['POST'])
+def restart_task(task_id):
+    cookie_data = request.cookies.get('task_info_list')
+    prev_task_info_list = [] if not cookie_data else json.loads(cookie_data)
+    task_info = [task_info for task_info in prev_task_info_list if task_id in task_info][0]
+    _, task_kwargs_json = task_info.split('|')
+    task_kwargs = dict(json.loads(task_kwargs_json))
+    cookie_added_response = start_task(**task_kwargs)
+    return cookie_added_response
 
 @app.route('/taskstatus/<task_id>')
 def taskstatus(task_id):
@@ -249,13 +264,14 @@ def taskstatus(task_id):
             'total': 1,
             'status': str(task.info),  # this is the exception raised
         }
-    cookie_data = request.cookies.get('task_id_list')
+    cookie_data = request.cookies.get('task_info_list')
     prev_task_info_list = [] if not cookie_data else json.loads(cookie_data)
     
-    form_args_json = [task_info.split('|')[-1] for task_info in prev_task_info_list if task_id in task_info][-1]
-    form_args_dict = {key:value for (key, value) in json.loads(form_args_json).items() if value}
-
-    form_args = ' | '.join([f'{key} : {value}' for (key, value) in form_args_dict.items()])
+    form_args_json = [task_info.split('|')[-1] for task_info in prev_task_info_list if task_id in task_info]
+    form_args = ''
+    if form_args_json :     
+        form_args_dict = {key:value for (key, value) in json.loads(form_args_json[0]).items() if value}
+        form_args = ' | '.join([f'{key} : {value}' for (key, value) in form_args_dict.items()])
     response['form'] = form_args
 
     return jsonify(response)
