@@ -9,7 +9,7 @@ import logging
 logger = logging.getLogger('mainLogger')
 
 class redis_test:
-    def init(self):
+    def __init__(self):
         self.redisClient = redis.StrictRedis(host='localhost', port=6379, db=0)
 
         self.colorSet = "Colors"
@@ -38,6 +38,9 @@ class redis_test:
             else:
                 print('Not', i)
 
+    def check_revoke(self):
+        print(self.redisClient.smembers('celery_revoke'))
+
 class celery_test:
     def __init__(self):
         self.config = {}
@@ -62,4 +65,4 @@ class class_util_test:
         article = Article('https://www.sciencedirect.com/science/article/abs/pii/S1540748920304715#!')
         print(article.authors)
 
-class_util_test().article()
+redis_test().check_revoke()

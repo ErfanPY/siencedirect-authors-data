@@ -183,10 +183,13 @@
                         $(status_div.childNodes[5]).after(`<button onclick="restart_task('${task_id}')">Restart task</button>`)
                     }
                 } else {
-                    // rerun in 2 seconds
-                    setTimeout(function() {
-                        update_progress(status_url, nanobar, status_div);
-                    }, 2000);
+                    $('div[task_id]').each(function() {
+                        if (task_id === $(this).attr('task_id')) {
+                            setTimeout(function() {
+                                update_progress(status_url, nanobar, status_div);
+                            }, 2000);
+                        }
+                    });
                 }
             });
         }

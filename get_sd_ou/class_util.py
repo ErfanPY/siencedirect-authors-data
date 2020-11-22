@@ -256,10 +256,10 @@ class Article(Page):
 
         authors_res = {}
         authors_list_json = []
-        affiliations_list = re.findall(r'country[^\]\}]*"([^\]\}]*)"', json_element)
-        if not affiliations_list :
-            #TODO
-            affiliations_list = [' ']
+        # affiliations_list = re.findall(r'country[^\]\}]*"([^\]\}]*)"', json_element)
+        # if not affiliations_list :
+        #     #TODO
+        #     affiliations_list = [' ']
         authors_groups_list_json = json_data['authors']['content']
         authors_groups_list_json = list(
             filter(lambda dict: dict['#name'] == 'author-group', authors_groups_list_json))
@@ -268,11 +268,16 @@ class Article(Page):
                 group_authors = list(
                     filter(lambda dict: dict['#name'] == 'author', group['$$']))
                 [authors_list_json.append(group_author) for group_author in group_authors]
-        _affiliations_data_dict = json_data['authors']['affiliations']
+        
+        affiliations_data_dict = json_data['authors']['affiliations']
         for index, author_json in enumerate(authors_list_json):
             reference_list = list(filter(lambda dict: dict['#name'] == 'cross-ref', author_json['$$']))
-            _affiliations_id_list = [ref['$']['refid'] for ref in reference_list]
-            affiliation_country = affiliations_list[index % len(affiliations_list)]
+            affiliations_id_list = [ref['$']['refid'] for ref in reference_list if 'aff' in ref['$']['refid']]
+            affiliation_text = ''
+            for affiliation_id in affiliations_id_list:
+                affiliation_json = affiliations_data_dict[affiliation_id]
+                affiliation_text += affiliation_json['$$'][3]['_'] + '||'
+
             first_name = author_json['$$'][0]['_']
             try:
                 last_name = author_json['$$'][1]['_']
@@ -281,16 +286,20 @@ class Article(Page):
             email_check = list(
                 filter(lambda dic: dic['#name'] == 'e-address', author_json['$$']))
             try:
-                email = None if not email_check else email_check[0]['_']
+                email = email_check[0]['_'] if  email_check else None
             except KeyError:
                 email = email_check[0]['$$'][0]['_']
-            """
+            
+            # depricated
+            # affiliation_country = affiliations_list[index % len(affiliations_list)]
+            
+            """ # depricated
             splited_aff = list(json_data['authors']['affiliations'].items())[0][1]['$$']
             affiliation_text = list(filter(lambda dic: dic['#name'] == 'textfn', splited_aff))[0]['_']
             affiliation_country = affiliation_text.split(',')[-1]
             """
             authors_res[index] = {'first_name': first_name, 'last_name': last_name,
-                                  'email': email, 'affiliation': affiliation_country}
+                                  'email': email, 'affiliation': affiliation_text}
         return authors_res
 
     @property

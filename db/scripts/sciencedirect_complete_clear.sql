@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS `authors` (
   `name` varchar(50) NOT NULL,
   `email` varchar(50) DEFAULT NULL,
   `scopus` varchar(50) DEFAULT NULL,
-  `affiliation` varchar(50) DEFAULT NULL,
+  `affiliation` TEXT DEFAULT NULL,
   PRIMARY KEY (`author_id`),
   UNIQUE KEY `email` (`email`),
   UNIQUE KEY `scopus` (`scopus`)
