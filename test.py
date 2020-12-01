@@ -60,9 +60,17 @@ class celery_test:
                                     queue="main_search")
 
 class class_util_test:
-    def article(self):
+    def __init__ (self, article_key):
+        self.article_dict = {
+            'last_name':'https://www.sciencedirect.com/science/article/pii/S2211715620300242',
+            '':'https://www.sciencedirect.com/science/article/abs/pii/S1540748920304715#!',
+        }
+    def article(self, article_key=None):
         from get_sd_ou.class_util import Article
-        article = Article('https://www.sciencedirect.com/science/article/abs/pii/S1540748920304715#!')
-        print(article.authors)
-
+        if article_key:
+            article = Article(self.article_dict.get(article_key))
+            print(article.authors)
+        else:
+            for article_url in self.article_dict.values():
+                
 redis_test().check_revoke()

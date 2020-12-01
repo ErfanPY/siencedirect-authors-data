@@ -1,3 +1,12 @@
+BROKER_CONNECTION_RETRY = True
+BROKER_CONNECTION_MAX_RETRIES = 0
+BROKER_CONNECTION_TIMEOUT = 120
+
+The first line will make it retry whenever it fails, and the second one will disable the retry limit.
+
+If that solution does not suit you enough, you can also try a high timeout (specified in seconds) for your app using this option:
+
+
 #KILL TASK
 >>> from celery.task.control import revoke
 >>> revoke(task_id, terminate=True)
@@ -11,8 +20,7 @@ sudo mysql_secure_installation
 mysql -uroot -proot < sciencedirect_complete_clear.sql 
 
 #CELERY
-celery -A get_sd_ou.get_sd_ou.celery worker -Q main_search --loglevel=INFO -E
-celery -A get_sd_ou.get_sd_ou.celery worker -Q scopus_search --loglevel=INFO -E
+celery -A get_sd_ou.get_sd_ou.celery worker -Q main_search --loglevel=INFO -E -P eventlet -c 100  
 
 #PYTHON
 python3 -m get_sd_ou.app

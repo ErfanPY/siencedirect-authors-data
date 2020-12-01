@@ -1,8 +1,14 @@
 ## Sciencedirect scraper :
 
-Search articles with given search parameters  
-Get authors data from articles  
-Authors data: Name, Email, Scopus_id
+[Sciencedirect](https://www.sciencedirect.com/) Authors scraper.
+
+It has a flask user interface and celery as task queue,
+You have to start Celery and then run the flask server .
+
+You can choose the search parameters (same as sciencedirect article search parameters)  for  the form in the index page.
+The it will start a celery task and search for authors , it returns a search status every 2 second.
+
+Also you can goto database result search page and search for scraped article and authors data.
 
 
 ## REQUIREMENT
@@ -30,11 +36,7 @@ mysql -uroot -p < ./db/scripts/sciencedirect_complete_clear.sql
 ```
 # CELERY
 ```
-celery -A get_sd_ou.get_sd_ou.celery worker -Q main_search --loglevel=INFO -E -P eventlet -c 100  
-
 celery -A get_sd_ou.get_sd_ou.celery worker -Q main_search --loglevel=DEBUG -E -P eventlet -c 100  > log.log
-
-celery -A get_sd_ou.get_sd_ou.celery worker -Q scopus_search --loglevel=INFO -E
 ```
 # PYTHON
 ```

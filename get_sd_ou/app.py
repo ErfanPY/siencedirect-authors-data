@@ -25,6 +25,10 @@ app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
 app.config['CELERY_RESULT_BACKEND'] = 'redis://localhost:6379/0'
 app.config['CELERY_IGNORE_RESULT'] = False
 
+app.config['BROKER_CONNECTION_RETRY'] = True
+app.config['BROKER_CONNECTION_MAX_RETRIES'] = 0
+app.config['BROKER_CONNECTION_TIMEOUT'] = 120
+
 celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
 
 celery.conf.update(app.config)
@@ -104,7 +108,9 @@ def db_start_search():
     kwargs = dict(request.form)
     kwargs['offset'] = 0
     database_result = get_db_result(cnx=db_connection, **kwargs)
-
+    
+    logger.debug('[app][db_start_search] | database_result: %s ', str(database_result)[:20])
+    
     return render_template('db_result.html', searchs=database_result)
     # return str(database_result)
 

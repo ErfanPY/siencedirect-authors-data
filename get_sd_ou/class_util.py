@@ -276,7 +276,7 @@ class Article(Page):
             affiliation_text = ''
             for affiliation_id in affiliations_id_list:
                 affiliation_json = affiliations_data_dict[affiliation_id]
-                affiliation_text += affiliation_json['$$'][3]['_'] + '||'
+                affiliation_text += list(filter(lambda dict: dict['#name'] == 'textfn', affiliation_json['$$']))[0]['_'] + '||'
 
             first_name = author_json['$$'][0]['_']
             try:
