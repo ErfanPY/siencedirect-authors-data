@@ -5,10 +5,21 @@ import re
 from urllib.parse import parse_qsl, unquote_plus, urljoin, urlparse
 
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from bs4 import BeautifulSoup as bs
 
 logger = logging.getLogger('mainLogger')
 
+retry_strategy = Retry(
+    total=3,
+    status_forcelist=[429, 500, 502, 503, 504],
+    method_whitelist=["HEAD", "GET", "OPTIONS"]
+)
+adapter = HTTPAdapter(max_retries=retry_strategy)
+http = requests.Session()
+http.mount("https://", adapter)
+http.mount("http://", adapter)
 
 class Url():
     def __init__(self, url, headers={}, **kwargs):
@@ -50,7 +61,7 @@ class Url():
             return self._response
         except AttributeError:
             logger.debug('[ Url ] getting url response | url: %s', self.url)
-            self._response = requests.get(self.url, headers=self.headers)
+            self._response = http.get(self.url, headers=self.headers)
         return self._response
 
     def _get_filename_from_cd(self, cd):
@@ -210,6 +221,12 @@ class json_parse:
     def filter(self, filter_by):
         pass
 
+def filter_list_in_dict(dict_data, check_key, expected_value, just_first=False):
+    matched_list = list(filter(lambda x: x[check_key] == expected_value, dict_data))
+    if matched_list:
+        return (matched_list[0] if just_first else matched_list)
+    return {} if just_first else [{}, ]
+
 class Article(Page):
     def __init__(self, url, do_bibtex=False, *args, **kwargs):
         self.url = url
@@ -240,7 +257,7 @@ class Article(Page):
 
         self.bibtex_file_path = f'articles/{self.pii}.bib'
         with open(self.bibtex_file_path, 'ab') as f:
-            f.write(requests.get(self.bibtex_url, headers=self.headers))
+            f.write(http.get(self.bibtex_url, headers=self.headers))
         return self.bibtex_url
 
     def _author_icons(self, tag_a):
@@ -276,19 +293,21 @@ class Article(Page):
             affiliation_text = ''
             for affiliation_id in affiliations_id_list:
                 affiliation_json = affiliations_data_dict[affiliation_id]
-                affiliation_text += list(filter(lambda dict: dict['#name'] == 'textfn', affiliation_json['$$']))[0]['_'] + '||'
+                affiliation_fn = list(filter(lambda dict: dict['#name'] == 'textfn', affiliation_json['$$']))[0]
+                if affiliation_fn.get('$$') :
+                    affiliation_text_list = list(filter(lambda dict: dict['#name'] == '__text__', affiliation_fn['$$']))
+                    for affiliation_text_item in affiliation_text_list:
+                        affiliation_text    += affiliation_text_item['_'] + '||'
+                else :
+                    affiliation_text += affiliation_fn['_'] + '||'
 
-            first_name = author_json['$$'][0]['_']
+            first_name = filter_list_in_dict(author_json['$$'], '#name', 'given-name', just_first=True).get('_', 'noFirstName')
+            last_name = filter_list_in_dict(author_json['$$'], '#name', 'surname', just_first=True).get('_', 'noLastName')
+            email_check = filter_list_in_dict(author_json['$$'], '#name', 'e-address', just_first=True)
             try:
-                last_name = author_json['$$'][1]['_']
+                email = email_check['_'] if  email_check else None
             except KeyError:
-                last_name = " "
-            email_check = list(
-                filter(lambda dic: dic['#name'] == 'e-address', author_json['$$']))
-            try:
-                email = email_check[0]['_'] if  email_check else None
-            except KeyError:
-                email = email_check[0]['$$'][0]['_']
+                email = email_check['$$'][0]['_']
             
             # depricated
             # affiliation_country = affiliations_list[index % len(affiliations_list)]
