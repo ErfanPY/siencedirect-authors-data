@@ -348,7 +348,7 @@ def get_article_authors(article_id, cnx=None):
           FROM sciencedirect.articles AS t1\
           JOIN sciencedirect.article_authors AS t2 ON t1.article_id = t2.article_id\
           JOIN sciencedirect.authors AS t3 ON t2.author_id = t3.author_id\
-          WHERE t2.author_id = %s"
+          WHERE t2.article_id = %s"
 
     val = (article_id, )
     cursor.execute(sql, val)
