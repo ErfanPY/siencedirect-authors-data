@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from re import search
+import re
 import time
 import queue
 import threading
@@ -141,8 +142,14 @@ def start_multi_search(self, worker_count=1, worker_offset_count=100, **search_k
         logger.debug('[get_sd_ou][start_multi_search][MIDDLE] | Another task started | search_kwargs : %s, i : %s', search_kwargs, i)
     return task_id_list
 
+"""
+وقتی یه ورکر جدید که کلید واژه مشابهی رو سرچ می کنه اضافه میشه یه تابع تصمیم گیری بهش 
+میگه که از چه افستی تا چه افستی رو باید سرچ کنه
+
+"""
+
 @celery.task(bind=True, name='start_search')
-def start_search(self, write_offset=True, search_id=0, start_offset=0, db_connection=None, **search_kwargs):
+def start_search(self, write_offset=True, search_id=0, start_offset=0, end_offset= -1, db_connection=None, **search_kwargs):
     logger.debug(
         '[get_sd_ou][start_search][IN] | search_kwargs : %s', search_kwargs)
     db_connection = db_connection if db_connection else init_db()
@@ -173,12 +180,15 @@ def start_search(self, write_offset=True, search_id=0, start_offset=0, db_connec
         
         if page == 'done':
             return 'DONE'
+        if end_offset != -1 and int(page_offset) > end_offset:
+            logger.debug( '[get_sd_ou][start_search][RETURN] Search reached end_offset | offset : %s, task_id : %s, search_kwargs : %s', page_offset, task_id, search_kwargs)
+            return 'Finished'
 
         for article_res in get_next_article(page):       
               
             if bytes(task_id, encoding='UTF-8') in redisClient.smembers('celery_revoke'):
-                logger.debug( '[get_sd_ou][start_search][MIDDLE] Task removed | task_id : %s, search_kwargs : %s', task_id, search_kwargs)
-                return 0
+                logger.debug( '[get_sd_ou][start_search][RETURN] Task removed | task_id : %s, search_kwargs : %s', task_id, search_kwargs)
+                return 'Removed'
 
             article, index_current_article, articles_count = article_res.values()
             

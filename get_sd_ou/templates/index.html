@@ -178,9 +178,10 @@
                         $(status_div.childNodes[3]).text('Result: ' + data['result']);
                     } else {
                         // something unexpected happened
-                        $(status_div.childNodes[5]).toggle();
-                        $(status_div.childNodes[3]).text('Result: ' + data['state']);
-                        $(status_div.childNodes[5]).after(`<button onclick="restart_task('${task_id}')">Restart task</button>`)
+                        restart_task(task_id);
+                        // $(status_div.childNodes[5]).toggle();
+                        // $(status_div.childNodes[3]).text('Result: ' + data['state']);
+                        // $(status_div.childNodes[5]).after(`<button onclick="restart_task('${task_id}')">Restart task</button>`)
                     }
                 } else {
                     $('div[task_id]').each(function() {
