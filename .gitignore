@@ -8,3 +8,4 @@ tmpt*
 *.log
 *.pyc
 exceptions.txt
+dump.rdb
