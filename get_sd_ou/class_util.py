@@ -129,13 +129,15 @@ class Find():
 
 
 class Page(Url, Find):
-    def __init__(self, url, do_soup=False, **kwargs):
+    def __init__(self, url, do_soup=False, soup_data=None, **kwargs):
         logger.debug('[ Page ] __init__ | url: %s', url)
         super().__init__(url=url, soup=None)
 
         self.seen_count = 0
         self.text = ''
-        if do_soup:
+        if soup_data:
+            self._soup = soup_data
+        elif do_soup:
             self._soup = self._soup_maker()
 
     def __hash__(self):
@@ -228,11 +230,11 @@ def filter_list_in_dict(dict_data, check_key, expected_value, just_first=False):
     return {} if just_first else [{}, ]
 
 class Article(Page):
-    def __init__(self, url, do_bibtex=False, *args, **kwargs):
+    def __init__(self, url, do_bibtex=False, soup_data=None, *args, **kwargs):
         self.url = url
         self.pii = self.get_pii()
         logger.debug('[ Article ] __init__ | pii: %s', self.pii)
-        super().__init__(url, *args, **kwargs)
+        super().__init__(url, soup_data=soup_data, *args, **kwargs)
         self.bibtex = ''
         self.title = self.soup.select_one('.title-text').text
         if do_bibtex:
