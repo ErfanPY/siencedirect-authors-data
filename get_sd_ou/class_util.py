@@ -341,7 +341,7 @@ class Article(Page):
         return self._authors
     
 class Search_page (Page):
-    def __init__(self, url='', show_per_page=100, start_offset=0, **search_kwargs):
+    def __init__(self, url='', show_per_page=100, start_offset=0, soup_data=None, **search_kwargs):
         if not url:
             #url = f'https://www.sciencedirect.com/search?qs={title}&date={url}&authors={author}&affiliations={affiliation}&show={show_per_page}'
             url = 'https://www.sciencedirect.com/search?'
@@ -349,19 +349,19 @@ class Search_page (Page):
                 if value:
                     url += '{}={}&'.format(key, value)
             url += 'show={}&'.format(show_per_page)
+
         logger.debug('[ Search_page ] __init__ | url: %s', url)
-        super().__init__(url)
+        super().__init__(url, soup_data=soup_data)
 
         self.url = url
-        self.search_kwargs = search_kwargs
         self.query = dict(self.url_parts.query)
+        self.search_kwargs = self.query
         self.show_per_page = show_per_page
         self.offset = self.query.get('offset', start_offset)
 
     def db_hash(self):
-        search_kwargs = self.search_kwargs
-        search_kwargs['offset'] = 0
-        return sha1(json.dumps(search_kwargs, sort_keys=True, ensure_ascii=False).encode('utf-8')).hexdigest()
+        # search_kwargs['offset'] = 0
+        return sha1(json.dumps(self.search_kwargs, sort_keys=True, ensure_ascii=False).encode('utf-8')).hexdigest()
 
     def __bool__(self):
         return self.url != ''
@@ -373,7 +373,7 @@ class Search_page (Page):
         for article in search_result:
             if article.get('href'):
                 article_link = article.get('href')
-                if 'pii' in article_link and not 'pdf' in article_link:
+                if 'pii' in article_link and not 'pdf' in article_link and not (article_link.split('/')[-1].startswith('B')):
                     articles.append(
                         urljoin('https://'+self.url_parts.netloc, article_link))
                     logger.debug(

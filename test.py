@@ -1,8 +1,13 @@
-import redis
-from celery import Celery
+import asyncio
+from asyncio import tasks
+from time import sleep
+import aiohttp
+# import redis
+from requests.sessions import session
+# from celery import Celery
 
-from get_sd_ou.get_sd_ou import start_multi_search
-from get_sd_ou.get_sd_ou import start_search, start_multi_search
+# from get_sd_ou.get_sd_ou import start_multi_search
+# from get_sd_ou.get_sd_ou import start_search, start_multi_search
 
 import logging
 
@@ -72,5 +77,17 @@ class class_util_test:
             print(article.authors)
         else:
             for article_url in self.article_dict.values():
-                
-redis_test().check_revoke()
+                pass
+
+async def get_soup(session, url, soup_list):
+    async with session.get(url) as response:
+        content = await response.read()
+        soup_list.append(content)
+        return content
+
+async def parse_page():
+    async with aiohttp.ClientSession() as session, session.get(url) as response:
+        content = await response.read()
+
+asyncio.run(parse_page())
+input(soup_list)

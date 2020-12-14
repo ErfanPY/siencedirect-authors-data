@@ -121,9 +121,9 @@ def connect_search_article(search_id, article_id, cnx=None):
 def insert_search(search_hash, cnx=None, **search_kwargs):
     logger.debug('[database_util][insert_search][IN] | search_hash : %s, search_kwargs : %s', search_hash, search_kwargs)
     cursor = cnx.cursor(buffered=True)
-    sql = "INSERT INTO sciencedirect.searchs (hash, date, qs, pub, authors, affiliation, volume, issue, page, tak, title, refrences, docId) VALUES ("
+    sql = "INSERT INTO sciencedirect.searchs (hash, date, qs, pub, authors, affiliation, volume, issue, page, tak, title, refrences, docId, offset) VALUES ("
     val = []
-    key_list = ['date', 'qs', 'pub', 'authors', 'affiliation', 'volume', 'issue', 'page', 'tak', 'title', 'refrences', 'docId']
+    key_list = ['date', 'qs', 'pub', 'authors', 'affiliation', 'volume', 'issue', 'page', 'tak', 'title', 'refrences', 'docId', 'offset']
     
     val.append(search_hash)
     sql += '%s, '
