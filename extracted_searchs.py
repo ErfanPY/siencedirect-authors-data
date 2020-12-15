@@ -35,7 +35,6 @@ async def parse_search(session, search_url, search_name):
     search_content = await get_soup(session, search_url)
     search_soup = bs(search_content, 'html.parser')
     search_page = Search_page(url=search_url, soup_data=search_soup)
-    search_offset = search_page.search_kwargs.get('offset', '0')
     
     with open(os.path.join('./extracted_articles', search_name), 'a') as file:
         file.write(search_url+'\n')
@@ -45,11 +44,9 @@ async def parse_search(session, search_url, search_name):
 async def start_searchs_parse(search_items):
     async with aiohttp.ClientSession() as session:
         tasks = []
-        for search_name, search_list in search_items:
-            for search_url in search_list:
-                # db_cnx = init_db()
-                task = asyncio.ensure_future(parse_search(session, search_url, search_name))
-                tasks.append(task)
+        for search_name, search_url in search_items:
+            task = asyncio.ensure_future(parse_search(session, search_url, search_name))
+            tasks.append(task)
         await asyncio.gather(*tasks, return_exceptions=True)
 
 def start_start_serach(free_or_limited_search='a'):
