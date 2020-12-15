@@ -96,12 +96,12 @@ async def start_articles_parse(search_article_items):
         tasks = []
         db_cnx = init_db()
         for search_url, article_url in search_article_items:
-            task = asyncio.ensure_future(parse_article(session=session, article_url=article_url, search_ur=search_url, db_cnx=db_cnx))
+            task = asyncio.ensure_future(parse_article(session=session, article_url=article_url, search_url=search_url, db_cnx=db_cnx))
             tasks.append(task)
         await asyncio.gather(*tasks, return_exceptions=True)
 
 def start_start_article():
-    file_list = [os.path.join('./extracted_files', file) for file in os.listdir('./extracted_files')]
+    file_list = [os.path.join('./extracted_articles', file) for file in os.listdir('./extracted_articles')]
     search_article_items = []
 
     for file_path in file_list:
@@ -116,7 +116,6 @@ def start_start_article():
                     search_article_items.append((current_search, line))
 
     start_time = time.time()
-    search_article_items = search_article_items.items()
     
     for i in range(0, len(search_article_items), async_slice_size):
         article_slice_items = search_article_items[i:i+async_slice_size]
@@ -142,7 +141,7 @@ if __name__ == '__main__':
     # logger.disabled = True
 
     async_slice_size = 700
-    article_or_search = 's' # a for article, s for search :)
+    article_or_search = 'a' # a for article, s for search :)
     free_or_limited_search = 'f' # f for free (just search accesible for every one), l for limited (just those accesible for registered), a for all
     
     if article_or_search == 'a':
