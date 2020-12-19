@@ -1,3 +1,7 @@
+
+selenimu driver
+https://github.com/mozilla/geckodriver/releases/download/v0.28.0/geckodriver-v0.28.0-win64.zip
+###############################
 BROKER_CONNECTION_RETRY = True
 BROKER_CONNECTION_MAX_RETRIES = 0
 BROKER_CONNECTION_TIMEOUT = 120
