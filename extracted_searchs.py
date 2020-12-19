@@ -31,27 +31,28 @@ async def parse_article(session, article_url, search_url, db_cnx):
 
     connect_search_article(search_id=search_id, article_id=article_id, cnx=db_cnx)
 
+
+def filter_search(search_url, free_or_limited_search):
+    offset = int(dict(parse_qsl(urlparse(search_url).query)).get('offset', 0))
+    if free_or_limited_search == 'f':
+        return offset <  1000
+    elif free_or_limited_search == 'l':
+        return offset >= 1000
+    else :
+        return 1
+
 async def parse_search(session, queue):
     while True:
         search_name, search_url = await queue.get()
-        print(search_name, search_url)
+        logger.log(10001, 'startes ||'+search_name+' || '+search_url)
         search_soup = await get_soup(session, search_url)
-    search_page = Search_page(url=search_url, soup_data=search_soup)
-    
-    with open(os.path.join('./extracted_articles', search_name), 'a') as file:
-        file.write(search_url+'\n')
-        file.writelines([i+'\n' for i in search_page.get_articles()])
-        print('3 :: ', search_name, search_url)
+        search_page = Search_page(url=search_url, soup_data=search_soup)
+        articles = search_page.get_articles()
+        with open(os.path.join('./extracted_articles', search_name), 'a') as file:
+            file.write(search_url+'\n')
+            file.writelines([i+'\n' for i in articles])
+        logger.log(10001, 'done ||'+search_name+' || '+search_url)
         queue.task_done()
-
-    def filter_search(search_url, free_or_limited_search):
-        offset = int(dict(parse_qsl(urlparse(search_url).query)).get('offset', 0))
-        if free_or_limited_search == 'f':
-            return offset <  1000
-        elif free_or_limited_search == 'l':
-            return offset >= 1000
-        else :
-            return 1
     
 def get_searchs_from_dir(dir_path):
     file_list = [os.path.join(dir_path, file) for file in os.listdir(dir_path)]
@@ -60,8 +61,8 @@ def get_searchs_from_dir(dir_path):
         search_name = file_path.split('\\')[-1].split('.')[0]
         
         with open(file_path) as file:
-            search_items = [(search_name, line.strip()) for line in file.readlines() if line.strip()]
-    # search_items = list(filter(lambda item: filter_search(item[1], free_or_limited_search), search_items))
+            search_items += [(search_name, line.strip()) for line in file.readlines() if line.strip()]
+    search_items = list(filter(lambda item: filter_search(item[1], free_or_limited_search), search_items))
 
     return search_items
 
@@ -69,7 +70,7 @@ def get_searchs_from_dir(dir_path):
 async def start_searchs_parse(free_or_limited_search='a'):
     search_urls = get_searchs_from_dir('./search_files')
     queue = asyncio.Queue()
-    workers_count = 3
+    workers_count = 10
 
     for search_name, search_url in search_urls:
             queue.put_nowait((search_name, search_url))
@@ -89,7 +90,6 @@ async def start_searchs_parse(free_or_limited_search='a'):
 
         await asyncio.gather(*tasks, return_exceptions=True)
 
-    print('====')
     print(f'{workers_count} workers Got {len(search_urls)} search in {total_slept_for:.2f} seconds')
 
 def get_articles_from_dir(dir_path):
@@ -141,7 +141,8 @@ def test_extraction():
 
 if __name__ == '__main__':
     logger = logging.getLogger('mainLogger')
-    debug = False
+    logger.setLevel(10000)
+    debug = True
     logger.disabled = not debug
 
     async_slice_size = 700
