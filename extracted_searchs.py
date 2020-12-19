@@ -71,10 +71,10 @@ def start_start_serach(free_or_limited_search='a'):
             return 1
     
     search_items = list(filter(lambda item: filter_search(item[1], free_or_limited_search), search_items))
-
+        
     for i in range(0, len(search_items), async_slice_size):
         search_slice_items = search_items[i:i+async_slice_size]
-        
+
         slice_start_time = time.time()
 
         asyncio.run(start_searchs_parse(search_items=search_slice_items))
@@ -120,20 +120,31 @@ def start_start_article():
     for i in range(0, len(search_article_items), async_slice_size):
         article_slice_items = search_article_items[i:i+async_slice_size]
 
-        slice_start_time = time.time()
-        asyncio.run(start_articles_parse(article_slice_items))
-
-        slice_end_time = time.time()
-        slice_duration = slice_end_time - slice_start_time
-
-        print(f'Prosseced {async_slice_size} in {slice_duration} second')
-        with open('result_time.txt', 'a') as f:
-            f.write(f'Prosseced {async_slice_size} in {slice_duration} second')
+def test_extraction():
+    extracted_search = {}
     
-    duration = time.time()-start_time
-    with open('result_time.txt', 'a') as f:
-            f.write(f'{len(search_article_items)} article link in {duration}s')
-    print(f'{len(search_article_items)} article link in {duration}s')
+
+    for file_path in os.listdir('./extracted_articles'):
+        with open(os.path.join('./extracted_articles', file_path)) as file:
+            lines = [line.strip() for line in file.readlines() if line.strip()]
+            current_search = ''
+            for line in lines :
+                if 'search' in line:
+                    current_search = line
+                    extracted_search[current_search] = []
+                elif 'article' in line:
+                    extracted_search[current_search].append(line)
+
+    for file_path in os.listdir('./search_files'):
+        with open(os.path.join('./search_files', file_path)) as file:
+            lines = [line.strip() for line in file.readlines() if line.strip()]
+            for line in lines :
+    
+                search_articles = extracted_search.get(line, [])
+                if len(search_articles) < 100 :
+                    print(file_path, len(search_articles), line)
+                    with open(os.path.join('./missing_searchs',file_path), 'a') as file:
+                        file.write(line+'\n')
 
 
 if __name__ == '__main__':
