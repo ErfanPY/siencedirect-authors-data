@@ -8,7 +8,7 @@ LOGGING_CONFIG = {
             'format': '%(asctime)s [%(levelname)s] [%(threadName)s:%(thread)d] : %(message)s',
         },
         'console_print': {
-            'format': '%(message)s'
+            'format': '%(asctime)s -- %(message)s'
         },
         'web_log': {
             'format': '%(message)s\n------------------------------------\n'
@@ -25,7 +25,7 @@ LOGGING_CONFIG = {
             'level': 'INFO',
             'formatter': 'console_print',
             'class': 'logging.FileHandler',
-            'filename': 'get_sd_ou/get_sd_ou.log',
+            'filename': 'log.log',
         }
     },
     'loggers': {

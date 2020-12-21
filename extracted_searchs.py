@@ -1,17 +1,18 @@
 import asyncio
-
-from aiohttp.helpers import current_task
+import json
 import logging
 import os
 import time
 from urllib.parse import parse_qsl, urlparse
 
 import aiohttp
+# from aiohttp.helpers import current_task
 from bs4 import BeautifulSoup as bs
 
 from get_sd_ou.class_util import Article, Search_page
 from get_sd_ou.database_util import (connect_search_article, init_db,
                                      insert_article_data, insert_search)
+
 
 async def get_soup(session, url):
     async with session.get(url) as response:
@@ -41,17 +42,27 @@ def filter_search(search_url, free_or_limited_search):
     else :
         return 1
 
+def short_str(string, max_len=40):
+    return string[:max_len//2] + '...' + string[len(string)-(max_len//2):]
+
 async def parse_search(session, queue):
     while True:
         search_name, search_url = await queue.get()
-        logger.log(10001, 'startes ||'+search_name+' || '+search_url)
+        logger.log(10001, f'{"START": >5} || {search_name} || {search_url}')
         search_soup = await get_soup(session, search_url)
         search_page = Search_page(url=search_url, soup_data=search_soup)
         articles = search_page.get_articles()
-        with open(os.path.join('./extracted_articles', search_name), 'a') as file:
-            file.write(search_url+'\n')
-            file.writelines([i+'\n' for i in articles])
-        logger.log(10001, 'done ||'+search_name+' || '+search_url)
+
+        with open(os.path.join('./extracted_articles', search_name+".json"), 'a+') as file:
+            try :
+                search_dict = json.load(file)
+            except json.decoder.JSONDecodeError:
+                search_dict = {}
+
+            search_dict[search_url] = list(set(search_dict.get(search_url, []) + articles))
+            json.dump(search_dict, file)
+
+        logger.log(10001, f'{"DONE": >5} || {search_name} : {len(articles)} || {search_url}')
         queue.task_done()
     
 def get_searchs_from_dir(dir_path):
@@ -70,25 +81,26 @@ def get_searchs_from_dir(dir_path):
 async def start_searchs_parse(free_or_limited_search='a'):
     search_urls = get_searchs_from_dir('./search_files')
     queue = asyncio.Queue()
-    workers_count = 10
+    workers_count = 50
 
-    for search_name, search_url in search_urls:
+    for search_name, search_url in search_urls[:100]:
             queue.put_nowait((search_name, search_url))
     
     tasks = []
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(headers=headers) as session:
         for _ in range(workers_count):
             task = asyncio.ensure_future(parse_search(session, queue))
             tasks.append(task)
 
         started_at = time.monotonic()
         await queue.join()
+
     total_slept_for = time.monotonic() - started_at
 
     for task in tasks:
         task.cancel()
 
-        await asyncio.gather(*tasks, return_exceptions=True)
+    await asyncio.gather(*tasks, return_exceptions=True)
 
     print(f'{workers_count} workers Got {len(search_urls)} search in {total_slept_for:.2f} seconds')
 
@@ -138,6 +150,10 @@ def test_extraction():
                     with open(os.path.join('./missing_searchs',file_path), 'a') as file:
                         file.write(line+'\n')
 
+headers = {
+    'Accept': 'application/json, text/plain, */*',
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:80.0) Gecko/20100101 Firefox/80.0'
+}
 
 if __name__ == '__main__':
     logger = logging.getLogger('mainLogger')
