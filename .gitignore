@@ -9,3 +9,4 @@ tmpt*
 *.pyc
 exceptions.txt
 dump.rdb
+extracted_articles/
