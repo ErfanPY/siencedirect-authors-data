@@ -1,5 +1,5 @@
-import itertools
 import asyncio
+import itertools
 import json
 import logging
 import os
@@ -11,6 +11,8 @@ import aiohttp
 from bs4 import BeautifulSoup as bs
 
 from get_sd_ou.class_util import Article, Search_page
+from get_sd_ou.database_util import (connect_search_article, init_db,
+                                     insert_article_data, insert_search)
 
 
 async def get_soup(session, url):
@@ -98,12 +100,80 @@ def get_search_from_dir(dir, free_or_limited_search):
             search_dict[search_name] = search_urls
     return list(search_dict.items())
 
+async def parse_article(session, article_url, search_url, db_cnx):
+    article_content = await get_soup(session, article_url)
+    article_soup = bs(article_content, 'html.parser')
+    article_page = Article(url=article_url,soup_data=article_soup)
+    article_id = insert_article_data(**article_page.get_article_data(), cnx=db_cnx)
+    
+    search_content = await get_soup(session, search_url)
+    search_soup = bs(search_content, 'html.parser')
+    search_page = Search_page(url=search_url, soup_data=search_soup)
+    search_id = insert_search(search_hash=search_page.db_hash(), **search_page.search_kwargs, cnx=db_cnx)
+    
 
+    connect_search_article(search_id=search_id, article_id=article_id, cnx=db_cnx)
 
+async def start_articles_parse(searchs_dict):
+    for _search_name , search_article_dict in searchs_dict.items():
+        tasks = []
+        for search_url, articles in search_article_dict.items():
+            async with aiohttp.ClientSession() as session:
+                db_cnx = init_db()
+                for article in articles:
+                    task = asyncio.ensure_future(parse_article(session=session, article_url=article, search_url=search_url, db_cnx=db_cnx))
+                    tasks.append(task)
+        await asyncio.gather(*tasks, return_exceptions=True)
 
+def get_articles_from_dir(dir_path):
+    file_names = os.listdir(dir_path)
+
+    searchs_dict = {}
+    for file_name in file_names:
+        file_path = os.path.join(dir_path, file_name)
+
+        file_name = file_name.split('.')[0]
+        with open(file_path) as file:          
+            searchs_dict[file_name] = json.load(file)
+
+    return searchs_dict
+def test_missing_searchs():
+    all_searchs_items = get_search_from_dir('./search_files', 'a')
+    ext_searchs_dict = get_articles_from_dir('./extracted_articles')
+
+    articles_less_searchs = {}
+    for inp_search_name, searchs in all_searchs_items :
+        ext_searchs = ext_searchs_dict.get(inp_search_name)
+        articles_less_searchs[inp_search_name] = []
+        for search in searchs:
+            ext_articles = ext_searchs.get(search, [])
+            if len(ext_articles) <= 20 :
+                articles_less_searchs[inp_search_name].append(search)
+        print(inp_search_name, len(articles_less_searchs[inp_search_name]))
+
+    total_lose = sum([len(i) for i in articles_less_searchs.values()])
+    print(total_lose)
+    for search_name, searchs in articles_less_searchs.items():
+        with open(os.path.join('./missing_searchs', search_name+'.txt'), 'a') as file:
+            file.writelines([search+'\n' for search in searchs])
+
+    print(articles_less_searchs)
+print(input('sdad'))
 if __name__ == '__main__':
     logger = logging.getLogger('mainLogger')
     logger.setLevel(1000)
-    free_or_limited_search = 'f'
-    search_items = get_search_from_dir('./search_files', free_or_limited_search)          
-    asyncio.run(start_searchs_parse(search_items))
+    debug = True
+    logger.disabled = not debug
+
+    async_slice_size = 700
+    search_mode = 't' # a: article, s: search, t: testing extracted articles :)
+    free_or_limited_search = 'f' # f: free (just search accesible for every one), l: limited (just those accesible for registered), a: all
+    
+    if search_mode == 'a':
+        ext_searchs_dict = get_articles_from_dir('./extracted_articles')
+        asyncio.run(start_articles_parse(ext_searchs_dict))
+    elif search_mode == 's' :
+        search_items = get_search_from_dir('./search_files', free_or_limited_search)          
+        asyncio.run(start_searchs_parse(search_items))
+    elif search_mode == 't' :
+        test_missing_searchs()
