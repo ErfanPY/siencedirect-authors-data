@@ -73,7 +73,7 @@ async def start_searchs_parse(search_items):
 
             #             search_dict[search_url] = list(set(search_dict.get(search_url, []) + articles))
             #             json.dump(search_dict, file)
-            #             logger.log(10001, f'{"DONE": >5} || {search_name} : {len(articles)} || {search_url}')
+            #             logger.log(10001, f'{"END": >5} || {search_name} : {len(articles)} || {search_url}')
                         
 def is_in_extracted(search_name, url):
     with open(os.path.join('./extracted_articles', search_name+".json"), 'a+') as file:
@@ -101,6 +101,8 @@ def get_search_from_dir(dir, free_or_limited_search):
     return list(search_dict.items())
 
 async def parse_article(session, article_url, search_url, db_cnx):
+    logger.debug('[parse_article|START] search_url: %s, article_url:  %s| search_id: %s, article_id: %s', search_url, article_url, search_id, article_id)
+
     article_content = await get_soup(session, article_url)
     article_soup = bs(article_content, 'html.parser')
     article_page = Article(url=article_url,soup_data=article_soup)
@@ -110,19 +112,22 @@ async def parse_article(session, article_url, search_url, db_cnx):
     search_soup = bs(search_content, 'html.parser')
     search_page = Search_page(url=search_url, soup_data=search_soup)
     search_id = insert_search(search_hash=search_page.db_hash(), **search_page.search_kwargs, cnx=db_cnx)
-    
-
+    logger.debug('[parse_article|END] search_url: %s, article_url:  %s| search_id: %s, article_id: %s', search_url, article_url, search_id, article_id)
     connect_search_article(search_id=search_id, article_id=article_id, cnx=db_cnx)
 
 async def start_articles_parse(searchs_dict):
-    for _search_name , search_article_dict in searchs_dict.items():
+    for search_name , search_article_dict in searchs_dict.items():
         tasks = []
         for search_url, articles in search_article_dict.items():
+            logger.debug('[parse_article|START] search_name: %s, search_url: %s  | articles count: %s', search_name, search_url, len(articles))
+
             async with aiohttp.ClientSession() as session:
                 db_cnx = init_db()
                 for article in articles:
                     task = asyncio.ensure_future(parse_article(session=session, article_url=article, search_url=search_url, db_cnx=db_cnx))
                     tasks.append(task)
+            logger.debug('[parse_article|END] search_name: %s, search_url: %s  | articles count: %s', search_name, search_url, len(articles))
+            
         await asyncio.gather(*tasks, return_exceptions=True)
 
 def get_articles_from_dir(dir_path):
