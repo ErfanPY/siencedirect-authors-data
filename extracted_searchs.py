@@ -157,8 +157,6 @@ def test_missing_searchs():
         with open(os.path.join('./missing_searchs', search_name+'.txt'), 'a') as file:
             file.writelines([search+'\n' for search in searchs])
 
-    print(articles_less_searchs)
-print(input('sdad'))
 if __name__ == '__main__':
     logger = logging.getLogger('mainLogger')
     logger.setLevel(1000)
