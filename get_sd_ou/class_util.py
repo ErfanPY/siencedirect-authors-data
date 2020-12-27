@@ -236,7 +236,8 @@ class Article(Page):
         logger.debug('[ Article ] __init__ | pii: %s', self.pii)
         super().__init__(url, soup_data=soup_data, *args, **kwargs)
         self.bibtex = ''
-        self.title = self.soup.select_one('.title-text').text
+        self._title = ''
+        self._keywords = ''
         if do_bibtex:
             self.bibtex = self.export_bibtex()
 
@@ -245,11 +246,24 @@ class Article(Page):
     def get_pii(self):
         return self.url.split('/')[-1].replace('#!', '')
     
+    @property
+    def keywords(self):
+        if self._keywords:
+            return self._keywords
+        
+        keywords = ''
+        for keyword_group in self.soup.select_one('.Keywords').select('.keywords-section'):
+            for keyword in keyword_group.select('.keyword'):
+                keywords += keyword.text + '|'
+        
+        self._keywords = keywords
+        return self._keywords
+
     def get_article_data(self, *needed_data):
         """ this is the main function of article it collect all data we need from an article (needed data is spesified from input) 
         it get authors name and email and affiliation from article 
         """
-        data = {'pii': self.pii, 'authors': self.authors, 'bibtex': self.bibtex, 'title':self.title}
+        data = {'pii': self.pii, 'authors': self.authors, 'bibtex': self.bibtex, 'title':self.title, 'keywords':self.keywords}
 
         return data
 
@@ -340,6 +354,12 @@ class Article(Page):
             logger.debug('[ Article ] authors: %s', self._authors)
         return self._authors
     
+    @property
+    def title(self):
+        if not self._title:
+            self._title = self.soup.select_one('.title-text').text
+        return self._title
+
 class Search_page (Page):
     def __init__(self, url='', show_per_page=100, start_offset=0, soup_data=None, **search_kwargs):
         if not url:

@@ -1,9 +1,7 @@
 import asyncio
-import itertools
 import json
 import logging
 import os
-import time
 from urllib.parse import parse_qsl, urlparse
 
 import aiohttp
@@ -11,9 +9,10 @@ import aiohttp
 from bs4 import BeautifulSoup as bs
 
 from get_sd_ou.class_util import Article, Search_page
-from get_sd_ou.database_util import (connect_search_article, init_db,
-                                     insert_article_data, insert_search)
+from get_sd_ou.database_util import (connect_search_article, get_article, get_search, init_db,
+                                     insert_article_data, insert_search, update_article)
 
+a = Article('https://www.sciencedirect.com/science/article/abs/pii/S1540748920304715#keys0001')
 
 async def get_soup(session, url):
     async with session.get(url) as response:
@@ -106,25 +105,43 @@ def get_search_from_dir(dir, free_or_limited_search):
     return list(search_dict.items())
 
 
-async def parse_article(session, article_url, search_url, db_cnx):
-    logger.debug('[parse_article|START] search_url: %s, article_url:  %s| search_id: %s, article_id: %s',
-                 search_url, article_url, search_id, article_id)
+async def parse_article(article_url, search_url, db_cnx):
+    logger.debug('[parse_article|START] search_url: %s, article_url:  %s',
+                 search_url, article_url)
 
-    article_content = await get_soup(session, article_url)
-    article_soup = bs(article_content, 'html.parser')
-    article_page = Article(url=article_url, soup_data=article_soup)
-    article_id = insert_article_data(
-        **article_page.get_article_data(), cnx=db_cnx)
+    article_page = Article(url=article_url)
+    search_page = Search_page(url=search_url)
 
-    search_content = await get_soup(session, search_url)
-    search_soup = bs(search_content, 'html.parser')
-    search_page = Search_page(url=search_url, soup_data=search_soup)
-    search_id = insert_search(
-        search_hash=search_page.db_hash(), **search_page.search_kwargs, cnx=db_cnx)
-    logger.debug('[parse_article|END] search_url: %s, article_url:  %s| search_id: %s, article_id: %s',
-                 search_url, article_url, search_id, article_id)
+    article_data = get_article(article_page.pii, cnx=db_cnx)
+    search_data = get_search(search_page.db_hash(), cnx=db_cnx)
+    
+    async with aiohttp.ClientSession() as session:
+        try:
+            article_content = await get_soup(session, article_url)
+        except Exception as e:
+            return e
+        article_soup = bs(article_content, 'html.parser')
+        article_page._soup = article_soup
+
+        if not search_data:
+            search_soup = bs(await get_soup(session, search_url), 'html.parser')
+            search_page._soup = search_soup
+            search_id = insert_search(
+                search_hash=search_page.db_hash(), **search_page.search_kwargs, cnx=db_cnx)
+
+    if article_data:
+        article_id = insert_article_data(
+            **article_page.get_article_data(), cnx=db_cnx)
+    else:
+        article_id = article_data.get('article_id')
+        update_article(
+            **article_page.get_article_data(), cnx=db_cnx)
+
     connect_search_article(search_id=search_id,
                            article_id=article_id, cnx=db_cnx)
+    logger.debug('[parse_article|END] search_url: %s, article_url:  %s| search_id: %s, article_id: %s',
+                 search_url, article_url, search_id, article_id)
+    return {"search_url": search_url, "article_url": article_url, "search_id": search_id, "article_id": article_id}
 
 
 async def start_articles_parse(searchs_dict):
@@ -134,13 +151,13 @@ async def start_articles_parse(searchs_dict):
             logger.debug('[parse_article|START] search_name: %s, search_url: %s  | articles count: %s',
                          search_name, search_url, len(articles))
 
-            async with aiohttp.ClientSession() as session:
-                db_cnx = init_db()
-                for article in articles:
-                    task = asyncio.ensure_future(parse_article(
-                        session=session, article_url=article, search_url=search_url, db_cnx=db_cnx))
-                    tasks.append(task)
-                await asyncio.gather(*tasks, return_exceptions=True)
+            db_cnx = init_db()
+            # TODO: Do slicing everry 10 article
+            for article in articles[:3]:
+                task = asyncio.ensure_future(parse_article(
+                    article_url=article, search_url=search_url, db_cnx=db_cnx))
+                tasks.append(task)
+            result = await asyncio.gather(*tasks, return_exceptions=True)
             logger.debug('[parse_article|END] search_name: %s, search_url: %s  | articles count: %s',
                          search_name, search_url, len(articles))
 
@@ -155,10 +172,8 @@ def get_articles_from_dir(dir_path):
         file_name = file_name.split('.')[0]
         with open(file_path) as file:
             try:
-                print(1, file_path)
                 searchs_dict[file_name] = json.load(file)
             except json.decoder.JSONDecodeError:
-                print(2, file_path)
                 searchs_dict[file_name] = {}
 
     return searchs_dict
@@ -185,9 +200,8 @@ def test_missing_searchs():
             file.writelines([search+'\n' for search in searchs])
 
 
-if __name__ == '__main__':
+if __name__ == '__ma    in__':
     logger = logging.getLogger('mainLogger')
-    logger.setLevel(1000)
     debug = True
     logger.disabled = not debug
 

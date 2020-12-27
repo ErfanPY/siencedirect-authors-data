@@ -43,11 +43,11 @@ def result_reper (res_dict):
 # INSERT
 
 
-def insert_article(pii, title='', bibtex='', cnx=None, **kwargs):
+def insert_article(pii, title='', bibtex='', keywords='', cnx=None, **kwargs):
     # update = UPDATE articles SET title=%S
     cursor = cnx.cursor(buffered=True)
-    sql = "INSERT IGNORE INTO sciencedirect.articles (pii, title, bibtex) VALUES (%s, %s, %s);"
-    val = (pii, title, bibtex)
+    sql = "INSERT IGNORE INTO sciencedirect.articles (pii, title, bibtex, keywords) VALUES (%s, %s, %s);"
+    val = (pii, title, bibtex, keywords)
     logger.debug('[database_util][insert_article][IN] | pii: %s, sql: %s, val: %s', pii, sql, val)
     cursor.execute(sql, val)
     cnx.commit()
@@ -156,7 +156,10 @@ def connect_multi_article_authors(article_id, authors_id_list, cnx=None):
 
 
 def insert_article_data(pii, authors, cnx=None, **kwargs):
-    article_id = insert_article(pii=pii, cnx=cnx, **kwargs)
+    article_id = get_article(pii, cnx).get('article_id')
+    
+    if not article_id:
+        article_id = insert_article(pii=pii, cnx=cnx, **kwargs)
 
     authors_id = insert_multi_author(authors, cnx=cnx)
     connect_multi_article_authors(article_id, authors_id, cnx=cnx)
@@ -165,8 +168,30 @@ def insert_article_data(pii, authors, cnx=None, **kwargs):
 # UPDATE
 
 
-def update_article(cnx=None):
-    raise NotImplementedError
+def update_article(pii, title, bibtex, keywords, cnx=None, **kwargs):
+    logger.debug('[database_util][update_article][IN] | pii: %s', pii)
+    
+    sql = 'UPDATE sciencedirect.articles SET title=%s, bibtex=%s, keywords=%s WHERE pii=%s LIMIT 1;'
+    val = (title, bibtex, keywords, pii)
+
+    cursor = cnx.cursor(buffered=True)
+    cursor.execute(sql, val)
+    cnx.commit()
+    
+    article_id = cursor.lastrowid
+
+    logger.debug(
+        '[database_util][update_article][OUT] | pii: %s  id: %s', pii, article_id)
+
+    return article_id
+
+    
+    val = (offset, hash)
+    cursor.execute(sql, val)
+    cnx.commit()
+    search_id = cursor.lastrowid
+    logger.debug('[database_util][update_article][OUT] | search_id : %s', search_id)
+    return search_id
 
 
 def update_author_scopus(name, id, cnx=None):
