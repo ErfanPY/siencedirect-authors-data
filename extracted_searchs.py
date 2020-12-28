@@ -12,14 +12,13 @@ from get_sd_ou.class_util import Article, Search_page
 from get_sd_ou.database_util import (connect_search_article, get_article, get_search, init_db,
                                      insert_article_data, insert_search, update_article)
 
-a = Article('https://www.sciencedirect.com/science/article/abs/pii/S1540748920304715#keys0001')
 
 async def get_soup(session, url):
     async with session.get(url) as response:
         try:
             return await response.read()
-        except:
-            return None
+        except Exception as e:
+            return e
 
 
 async def parse_search(session, search_url, search_name):
@@ -105,15 +104,13 @@ def get_search_from_dir(dir, free_or_limited_search):
     return list(search_dict.items())
 
 
-async def parse_article(article_url, search_url, db_cnx):
+async def parse_article(article_url, search_url, search_id, db_cnx):
     logger.debug('[parse_article|START] search_url: %s, article_url:  %s',
                  search_url, article_url)
 
     article_page = Article(url=article_url)
-    search_page = Search_page(url=search_url)
 
     article_data = get_article(article_page.pii, cnx=db_cnx)
-    search_data = get_search(search_page.db_hash(), cnx=db_cnx)
     
     async with aiohttp.ClientSession() as session:
         try:
@@ -122,14 +119,8 @@ async def parse_article(article_url, search_url, db_cnx):
             return e
         article_soup = bs(article_content, 'html.parser')
         article_page._soup = article_soup
-
-        if not search_data:
-            search_soup = bs(await get_soup(session, search_url), 'html.parser')
-            search_page._soup = search_soup
-            search_id = insert_search(
-                search_hash=search_page.db_hash(), **search_page.search_kwargs, cnx=db_cnx)
-
-    if article_data:
+        
+    if not article_data:
         article_id = insert_article_data(
             **article_page.get_article_data(), cnx=db_cnx)
     else:
@@ -148,14 +139,23 @@ async def start_articles_parse(searchs_dict):
     for search_name, search_article_dict in searchs_dict.items():
         tasks = []
         for search_url, articles in search_article_dict.items():
+            db_cnx = init_db()
+            search_page = Search_page(url=search_url)
+            search_data = get_search(search_page.db_hash(), cnx=db_cnx)
+        
+            if not search_data:
+                search_id = insert_search(
+                    search_hash=search_page.db_hash(), **search_page.search_kwargs, cnx=db_cnx)
+            else:
+                search_id = search_data.get('search_id')
+
             logger.debug('[parse_article|START] search_name: %s, search_url: %s  | articles count: %s',
                          search_name, search_url, len(articles))
 
-            db_cnx = init_db()
-            # TODO: Do slicing everry 10 article
+            
             for article in articles[:3]:
                 task = asyncio.ensure_future(parse_article(
-                    article_url=article, search_url=search_url, db_cnx=db_cnx))
+                    article_url=article, search_url=search_url, search_id=search_id, db_cnx=db_cnx))
                 tasks.append(task)
             result = await asyncio.gather(*tasks, return_exceptions=True)
             logger.debug('[parse_article|END] search_name: %s, search_url: %s  | articles count: %s',
@@ -199,8 +199,7 @@ def test_missing_searchs():
         with open(os.path.join('./missing_searchs', search_name+'.txt'), 'a') as file:
             file.writelines([search+'\n' for search in searchs])
 
-
-if __name__ == '__ma    in__':
+if __name__ == '__main__':
     logger = logging.getLogger('mainLogger')
     debug = True
     logger.disabled = not debug
