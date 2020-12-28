@@ -46,7 +46,7 @@ def result_reper (res_dict):
 def insert_article(pii, title='', bibtex='', keywords='', cnx=None, **kwargs):
     # update = UPDATE articles SET title=%S
     cursor = cnx.cursor(buffered=True)
-    sql = "INSERT IGNORE INTO sciencedirect.articles (pii, title, bibtex, keywords) VALUES (%s, %s, %s);"
+    sql = "INSERT IGNORE INTO sciencedirect.articles (pii, title, bibtex, keywords) VALUES (%s, %s, %s, %s);"
     val = (pii, title, bibtex, keywords)
     logger.debug('[database_util][insert_article][IN] | pii: %s, sql: %s, val: %s', pii, sql, val)
     cursor.execute(sql, val)
@@ -156,10 +156,12 @@ def connect_multi_article_authors(article_id, authors_id_list, cnx=None):
 
 
 def insert_article_data(pii, authors, cnx=None, **kwargs):
-    article_id = get_article(pii, cnx).get('article_id')
+    article_data = get_article(pii, cnx)
     
-    if not article_id:
+    if not article_data:
         article_id = insert_article(pii=pii, cnx=cnx, **kwargs)
+    else:
+        article_id = article_data.get('article_id')
 
     authors_id = insert_multi_author(authors, cnx=cnx)
     connect_multi_article_authors(article_id, authors_id, cnx=cnx)
