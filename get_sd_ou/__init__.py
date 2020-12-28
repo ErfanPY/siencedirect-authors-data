@@ -39,6 +39,11 @@ LOGGING_CONFIG = {
             'level': 'DEBUG',
             'propagate': False
         },
+        'fileLogger': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+            'propagate': False
+        },
         '__main__': {  # if __name__ == '__main__'
             'handlers': ['default'],
             'level': 'DEBUG',

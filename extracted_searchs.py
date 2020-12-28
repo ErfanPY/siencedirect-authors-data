@@ -170,8 +170,9 @@ async def start_articles_parse(searchs_dict):
                 tasks.append(task)
 
             result = await asyncio.gather(*tasks, return_exceptions=True)
-            logger.debug('[parse_article|END] search_name: %s, search_url: %s  | articles count: %s',
+            logger.debug('[start_parse_article|END] search_name: %s, search_url: %s  | articles count: %s',
                          search_name, search_url, len(articles))
+            logger.error('%s', result)
 
 
 def get_articles_from_dir(dir_path):
@@ -212,8 +213,8 @@ def test_missing_searchs():
             file.writelines([search+'\n' for search in searchs])
 
 if __name__ == '__main__':
-    logger = logging.getLogger('mainLogger')
-    debug = False
+    logger = logging.getLogger('fileLogger')
+    debug = True
     logger.disabled = not debug
 
     async_slice_size = 700

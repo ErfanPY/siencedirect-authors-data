@@ -378,7 +378,7 @@ class Search_page (Page):
         self.search_kwargs = self.query
         self.show_per_page = show_per_page
         self.offset = self.query.get('offset', start_offset)
-        self.offset = self.offset if self.offset else 0
+        self.offset = self.offset if self.offset != '' else 0
         
     def db_hash(self):
         # search_kwargs['offset'] = 0
