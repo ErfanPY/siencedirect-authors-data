@@ -230,4 +230,5 @@ if __name__ == '__main__':
         asyncio.run(start_searchs_parse(search_items))
     elif search_mode == 't':
         test_missing_searchs()
-#add test for knowing how many article got
+#TODO: add test for knowing how many article got
+#TODO: check database for authors withc not in article_authoers
