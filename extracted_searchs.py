@@ -239,3 +239,4 @@ if __name__ == '__main__':
 #TODO: check database for authors withc not in article_authoers
 #TODO#TODO:#TODO#TODO:#TODO#TODO: { fix error of network connection in article and search scraption } #TODO#TODO:#TODO#TODO:#TODO#TODO:#TODO#TODO:
 #TODO do a better already exsit search of article skiption (for search: get count of article in db and if is near the count of article in file skip it)
+#TODO log some data about current running task to know if is running
