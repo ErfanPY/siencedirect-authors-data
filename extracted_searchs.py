@@ -170,7 +170,7 @@ async def start_articles_parse(searchs_dict):
                     tasks.append(task)
 
                 result = await asyncio.gather(*tasks, return_exceptions=True)
-                
+
             logger.debug('[start_parse_article|END] search_name: %s, search_url: %s  | articles count: %s',
                          search_name, search_url, len(articles))
             logger.error('%s', result)
@@ -232,5 +232,8 @@ if __name__ == '__main__':
         asyncio.run(start_searchs_parse(search_items))
     elif search_mode == 't':
         test_missing_searchs()
+
 #TODO: add test for knowing how many article got
 #TODO: check database for authors withc not in article_authoers
+#TODO#TODO:#TODO#TODO:#TODO#TODO: { fix error of network connection in article and search scraption } #TODO#TODO:#TODO#TODO:#TODO#TODO:#TODO#TODO:
+#TODO do a better already exsit search of article skiption (for search: get count of article in db and if is near the count of article in file skip it)
