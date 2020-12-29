@@ -150,26 +150,27 @@ async def start_articles_parse(searchs_dict):
     for search_name, search_article_dict in searchs_dict.items():
         tasks = []
         for search_url, articles in search_article_dict.items():
-            db_cnx = init_db()
-            search_page = Search_page(url=search_url)
-            search_data = get_search(search_page.db_hash(), cnx=db_cnx)
-        
-            if not search_data:
-                search_id = insert_search(
-                    search_hash=search_page.db_hash(), **search_page.search_kwargs, cnx=db_cnx)
-            else:
-                search_id = search_data.get('search_id')
-
-            logger.debug('[parse_article|START] search_name: %s, search_url: %s  | articles count: %s',
-                         search_name, search_url, len(articles))
-
+            with init_db() as db_cnx:
+                search_page = Search_page(url=search_url)
+                search_data = get_search(search_page.db_hash(), cnx=db_cnx)
             
-            for article in articles:
-                task = asyncio.ensure_future(parse_article(
-                    article_url=article, search_url=search_url, search_id=search_id, db_cnx=db_cnx))
-                tasks.append(task)
+                if not search_data:
+                    search_id = insert_search(
+                        search_hash=search_page.db_hash(), **search_page.search_kwargs, cnx=db_cnx)
+                else:
+                    search_id = search_data.get('search_id')
 
-            result = await asyncio.gather(*tasks, return_exceptions=True)
+                logger.debug('[parse_article|START] search_name: %s, search_url: %s  | articles count: %s',
+                            search_name, search_url, len(articles))
+
+                
+                for article in articles:
+                    task = asyncio.ensure_future(parse_article(
+                        article_url=article, search_url=search_url, search_id=search_id, db_cnx=db_cnx))
+                    tasks.append(task)
+
+                result = await asyncio.gather(*tasks, return_exceptions=True)
+                
             logger.debug('[start_parse_article|END] search_name: %s, search_url: %s  | articles count: %s',
                          search_name, search_url, len(articles))
             logger.error('%s', result)
