@@ -252,7 +252,10 @@ class Article(Page):
             return self._keywords
         
         keywords = ''
-        for keyword_group in self.soup.select_one('.Keywords').select('.keywords-section'):
+        keywords_container = self.soup.select_one('.Keywords')
+        if not keywords_container:
+            return ''
+        for keyword_group in keywords_container.select('.keywords-section'):
             for keyword in keyword_group.select('.keyword'):
                 keywords += keyword.text + '|'
         
