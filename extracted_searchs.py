@@ -9,7 +9,7 @@ import aiohttp
 from bs4 import BeautifulSoup as bs
 
 from get_sd_ou.class_util import Article, Search_page
-from get_sd_ou.database_util import (connect_search_article, get_article, get_search, init_db,
+from get_sd_ou.database_util import (connect_search_article, get_article, get_search, get_search_articles, init_db,
                                      insert_article_data, insert_search, update_article)
 
 
@@ -110,14 +110,18 @@ def log_formatter(msg, data):
         ret += f' {key}: {value} |'
     return ret[:-2]
 
-async def parse_article(article_url, search_url, search_id, db_cnx, skip_article=True):
+async def parse_article(article_url, search_url, search_id, db_cnx, skip_exist=True):
 
-    return_data = {"search_url": search_url, "article_url": article_url, "search_id": search_id}
+    return_data = {"search_url": search_url, "article_url": article_url, "search_id": search_id, "article_id": 0}
     logger.debug(log_formatter('parse_article|START', return_data))
 
     article_page = Article(url=article_url)
     article_data = get_article(article_page.pii, cnx=db_cnx)
-    
+
+    if article_data and skip_exist:
+        return_data["article_id"] = article_data.get('article_id')
+        return return_data
+
     async with aiohttp.ClientSession() as session:
         try:
             article_content = await get_soup(session, article_url)
@@ -131,13 +135,11 @@ async def parse_article(article_url, search_url, search_id, db_cnx, skip_article
             **article_page.get_article_data(), cnx=db_cnx)
     else:
         article_id = article_data.get('article_id')
-        return_data["article_id"] = article_id
         
-        if skip_article:
-            return return_data
-
         update_article(
             **article_page.get_article_data(), cnx=db_cnx)
+
+    return_data["article_id"] = article_id
 
     connect_search_article(search_id=search_id,
                            article_id=article_id, cnx=db_cnx)
@@ -145,8 +147,7 @@ async def parse_article(article_url, search_url, search_id, db_cnx, skip_article
     
     return return_data
 
-
-async def start_articles_parse(searchs_dict):
+async def start_articles_parse(searchs_dict, skip_exist=True):
     for search_name, search_article_dict in searchs_dict.items():
         tasks = []
         for search_url, articles in search_article_dict.items():
@@ -154,11 +155,15 @@ async def start_articles_parse(searchs_dict):
             search_page = Search_page(url=search_url)
             search_data = get_search(search_page.db_hash(), cnx=db_cnx)
         
-            if not search_data:
+            if search_data:
+                search_id = search_data.get('search_id')
+                if skip_exist and len(get_search_articles(search_url, cnx=db_cnx)) >= len(articles) - 5 :
+                    db_cnx.close()
+                    continue
+
+            else:
                 search_id = insert_search(
                     search_hash=search_page.db_hash(), **search_page.search_kwargs, cnx=db_cnx)
-            else:
-                search_id = search_data.get('search_id')
 
             logger.debug('[parse_article|START] search_name: %s, search_url: %s  | articles count: %s',
                         search_name, search_url, len(articles))
@@ -215,7 +220,7 @@ def test_missing_searchs():
             file.writelines([search+'\n' for search in searchs])
 
 if __name__ == '__main__':
-    logging.getLogger("mainLogger").disabled = True
+    # logging.getLogger("mainLogger").disabled = True
     logger = logging.getLogger('fileLogger')
     debug = True
     logger.disabled = not debug
@@ -237,6 +242,7 @@ if __name__ == '__main__':
 
 #TODO: add test for knowing how many article got
 #TODO: check database for authors withc not in article_authoers
-#TODO#TODO:#TODO#TODO:#TODO#TODO: { fix error of network connection in article and search scraption } #TODO#TODO:#TODO#TODO:#TODO#TODO:#TODO#TODO:
-#TODO do a better already exsit search of article skiption (for search: get count of article in db and if is near the count of article in file skip it)
 #TODO log some data about current running task to know if is running
+
+#TODO:#TODO: { fix error of network connection in article and search scraption }
+#TODO do a better already exsit search of article skiption (for search: get count of article in db and if is near the count of article in file skip it)
