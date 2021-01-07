@@ -9,7 +9,7 @@ import aiohttp
 from bs4 import BeautifulSoup as bs
 
 from get_sd_ou.class_util import Article, Search_page
-from get_sd_ou.database_util import (connect_search_article, get_article, get_search, get_search_articles, init_db,
+from get_sd_ou.database_util import (connect_search_article, get_all_search, get_article, get_search, get_search_articles, init_db,
                                      insert_article_data, insert_search, update_article)
 
 
@@ -198,8 +198,28 @@ def get_articles_from_dir(dir_path):
 
     return searchs_dict
 
-
 def test_missing_searchs():
+    all_searchs_items = get_search_from_dir('./search_files', 'a')
+
+    missed_searchs = {}
+    db_cnx = init_db()
+    db_searchs = get_all_search(cnx=db_cnx)
+    hashs = [i.get('hash') for i in db_searchs]
+    
+    for inp_search_name, searchs in all_searchs_items:
+        missed_searchs[inp_search_name] = []
+        for search_url in searchs:
+            search_page = Search_page(url=search_url)
+            if not search_page.db_hash() in hashs:
+                print(search_url)
+                missed_searchs[inp_search_name].append(search_url)
+    
+    total_lose = sum([len(i) for i in missed_searchs.values()])
+    for search_name, searchs in missed_searchs.items():
+        with open(os.path.join('./missing_searchs', search_name+'.txt'), 'a') as file:
+            file.writelines([search+'\n' for search in searchs])    
+
+def test_missing_articles():
     all_searchs_items = get_search_from_dir('./search_files', 'a')
     ext_searchs_dict = get_articles_from_dir('./extracted_articles')
 
@@ -226,7 +246,7 @@ if __name__ == '__main__':
     logger.disabled = not debug
 
     async_slice_size = 700
-    search_mode = 'a'  # a: article, s: search, t: testing extracted articles :)
+    search_mode = 'ts'  # a: article, s: search, t: testing extracted articles :)
     # f: free (just search accesible for every one), l: limited (just those accesible for registered), a: all
     free_or_limited_search = 'f'
 
@@ -237,7 +257,9 @@ if __name__ == '__main__':
         search_items = get_search_from_dir(
             './search_files', free_or_limited_search)
         asyncio.run(start_searchs_parse(search_items))
-    elif search_mode == 't':
+    elif search_mode == 'ta':
+        test_missing_articles()
+    elif search_mode == 'ts':
         test_missing_searchs()
 
 #TODO: add test for knowing how many article got

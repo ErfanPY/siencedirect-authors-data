@@ -6,15 +6,15 @@ import logging
 
 logger = logging.getLogger('mainLogger')
 
-def init_db():
+def init_db(host="localhost", user="sciencedirect", password="root", port='3306'):
     logger.debug('[database_util][init_db][IN]')
     #cnx = mock_connection()
     cnx = mysql.connector.connect(
-        host="localhost",
-        user="sciencedirect",
-        password="root",
-        port='3306'
-    )
+        host=host,
+        user=user,
+        password=password,
+        port=port
+        )
     logger.debug('[database_util][init_db][OUT] | db_connection : %s', cnx)
 
     return cnx
@@ -278,6 +278,15 @@ def get_search(search_hash, cnx=None):
     cursor.reset()
     logger.debug('[database_util][get_search][OUT] | fetch_res : %s', fetch_res)
     return fetch_res
+
+def get_all_search(cnx=None):
+    cursor = cnx.cursor(buffered=True, dictionary=True)
+    sql = 'SELECT * FROM sciencedirect.searchs'
+
+    cursor.execute(sql)
+
+    myresult = cursor.fetchall()
+    return myresult
 
 def get_search_articles(search_id, cnx=None):
     logger.debug('[database_util][get_search_articles][IN] | search_id : %s', search_id)
