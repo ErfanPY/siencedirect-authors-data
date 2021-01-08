@@ -198,15 +198,18 @@ def get_articles_from_dir(dir_path):
 
     return searchs_dict
 
-def test_missing_searchs():
-    all_searchs_items = get_search_from_dir('./search_files', 'a')
-
+def not_parsed_articles():
+    ext_searchs_dict = get_articles_from_dir('./extracted_articles')
+    # sum([len(j) for i, j in get_search_from_dir()]) # Count of all search url
+    # sum([len(j) for i, j in ext_searchs_dict.items()]) # count of search with extracted article
+    # len(get_all_search(cnx=db_cnx)) # count of in db searchs
     missed_searchs = {}
+
     db_cnx = init_db()
     db_searchs = get_all_search(cnx=db_cnx)
     hashs = [i.get('hash') for i in db_searchs]
-    
-    for inp_search_name, searchs in all_searchs_items:
+
+    for inp_search_name, searchs in ext_searchs_dict.items():
         missed_searchs[inp_search_name] = []
         for search_url in searchs:
             search_page = Search_page(url=search_url)
@@ -215,6 +218,8 @@ def test_missing_searchs():
                 missed_searchs[inp_search_name].append(search_url)
     
     total_lose = sum([len(i) for i in missed_searchs.values()])
+    in_file_count = sum([len(j) for i, j in ext_searchs_dict.items()])
+    print(f'[ {in_file_count} in input file // {len(hashs)} extracted in DB // {total_lose} lost search ]')
     for search_name, searchs in missed_searchs.items():
         with open(os.path.join('./missing_searchs', search_name+'.txt'), 'a') as file:
             file.writelines([search+'\n' for search in searchs])    
@@ -260,7 +265,7 @@ if __name__ == '__main__':
     elif search_mode == 'ta':
         test_missing_articles()
     elif search_mode == 'ts':
-        test_missing_searchs()
+        not_parsed_articles()
 
 #TODO: add test for knowing how many article got
 #TODO: check database for authors withc not in article_authoers
