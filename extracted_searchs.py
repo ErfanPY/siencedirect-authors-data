@@ -256,7 +256,7 @@ if __name__ == '__main__':
     
     async_slice_size = 700
     logger.disabled = not debug
-    search_mode = 'ts'  # a: article, s: search, t: testing extracted articles
+    search_mode = 's'  # a: article, s: search, t: testing extracted articles
     free_or_limited_search = 'f' # f: free (just search accesible for every one), l: limited (just those accesible for registered), a: all
     
     if search_mode == 'a':
