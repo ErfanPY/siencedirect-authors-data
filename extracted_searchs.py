@@ -224,7 +224,7 @@ def not_parsed_articles():
         with open(os.path.join('./missing_searchs', search_name+'.txt'), 'a') as file:
             file.writelines([search+'\n' for search in searchs])    
 
-def test_missing_articles():
+def not_parsed_searchs():
     all_searchs_items = get_search_from_dir('./search_files', 'a')
     ext_searchs_dict = get_articles_from_dir('./extracted_articles')
 
@@ -262,9 +262,9 @@ if __name__ == '__main__':
         search_items = get_search_from_dir(
             './search_files', free_or_limited_search)
         asyncio.run(start_searchs_parse(search_items))
-    elif search_mode == 'ta':
-        test_missing_articles()
     elif search_mode == 'ts':
+        not_parsed_searchs()
+    elif search_mode == 'ta':
         not_parsed_articles()
 
 #TODO: add test for knowing how many article got
