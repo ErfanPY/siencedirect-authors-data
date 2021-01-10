@@ -256,8 +256,8 @@ if __name__ == '__main__':
     
     async_slice_size = 700
     logger.disabled = not debug
-    search_mode = 'ta'  # a: article, s: search, t: testing extracted articles
-    free_or_limited_search = 'f' # f: free (just search accesible for every one), l: limited (just those accesible for registered), a: all
+    search_mode = 'r'  # a: article, s: search, t: testing extracted articles
+    free_or_limited_search = 'a' # f: free (just search accesible for every one), l: limited (just those accesible for registered), a: all
     
     if search_mode == 'a':
         ext_searchs_dict = get_articles_from_dir('./extracted_articles')
@@ -266,6 +266,11 @@ if __name__ == '__main__':
     elif search_mode == 's':
         search_items = get_search_from_dir(
             './search_files', free_or_limited_search)
+        asyncio.run(start_searchs_parse(search_items))
+
+    elif search_mode == 'r':
+        search_items = get_search_from_dir(
+            './missing_searchs', free_or_limited_search)
         asyncio.run(start_searchs_parse(search_items))
 
     elif search_mode == 'ta':
