@@ -192,7 +192,7 @@ def get_articles_from_dir(dir_path):
     return searchs_dict
 
 
-def not_parsed_articles():
+def not_parsed_searchs():
     ext_searchs_dict = get_articles_from_dir('./extracted_articles')
     # sum([len(j) for i, j in get_search_from_dir()]) # Count of all search url
     # sum([len(j) for i, j in ext_searchs_dict.items()]) # count of search with extracted article
@@ -224,7 +224,7 @@ def not_parsed_articles():
             file.writelines([search+'\n' for search in searchs])
 
 
-def not_parsed_searchs():
+def not_parsed_articles():
     all_searchs_items = get_search_from_dir('./search_files', 'a')
     ext_searchs_dict = get_articles_from_dir('./extracted_articles')
 
@@ -256,7 +256,7 @@ if __name__ == '__main__':
     
     async_slice_size = 700
     logger.disabled = not debug
-    search_mode = 's'  # a: article, s: search, t: testing extracted articles
+    search_mode = 'ts'  # a: article, s: search, t: testing extracted articles
     free_or_limited_search = 'f' # f: free (just search accesible for every one), l: limited (just those accesible for registered), a: all
     
     if search_mode == 'a':
@@ -268,10 +268,10 @@ if __name__ == '__main__':
             './search_files', free_or_limited_search)
         asyncio.run(start_searchs_parse(search_items))
 
-    elif search_mode == 'ts':
-        not_parsed_searchs()
-
     elif search_mode == 'ta':
         not_parsed_articles()
+
+    elif search_mode == 'ts':
+        not_parsed_searchs()
 
 # TODO: check database for authors withc not in article_authoers
