@@ -36,14 +36,14 @@ class TestSearchPage(unittest.TestCase):
         
         self.assertEqual(result[0:3] + result[-3:], excpected_result)
     
-    def test_next_page(self):
+    def next_page(self):
         self.assertTrue(True)
     
-    def test_curent_page_num(self):
+    def curent_page_num(self):
         self.assertTrue(True)
         return True
 
-    def test_total_article_count(self):
+    def total_article_count(self):
         self.assertTrue(True)
 
 class TestArticle(unittest.TestCase):
