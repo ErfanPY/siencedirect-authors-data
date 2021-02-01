@@ -12,8 +12,8 @@ from flask import (Flask, jsonify, make_response,
 
 
 from get_sd_ou import get_sd_ou
-from get_sd_ou.class_util import Search_page
-from get_sd_ou.database_util import (get_db_result, get_search,
+from get_sd_ou.classUtil import SearchPage
+from get_sd_ou.databaseUtil import (get_db_result, get_search,
                                      get_search_suggest, init_db)
 
 logger = logging.getLogger('mainLogger')

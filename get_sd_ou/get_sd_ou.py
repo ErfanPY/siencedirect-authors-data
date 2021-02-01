@@ -6,8 +6,8 @@ import queue
 import threading
 import logging
 
-from get_sd_ou.class_util import Article, Search_page, Author
-from get_sd_ou.database_util import (init_db, insert_article_data, insert_search,
+from get_sd_ou.classUtil import Article, SearchPage, Author
+from get_sd_ou.databaseUtil import (init_db, insert_article_data, insert_search,
                             get_id_less_authors, get_search, update_author_scopus,
                             update_search_offset, connect_search_article, is_article_exist)
 import redis
@@ -55,9 +55,9 @@ def get_next_page(queue_id='', start_offset=0, **search_kwargs):
         '[get_sd_ou][get_next_page][IN] | search_kwargs : %s', search_kwargs)
     count = 0
     while True:
-        search_obj = Search_page(start_offset=start_offset, **search_kwargs)
+        search_obj = SearchPage(start_offset=start_offset, **search_kwargs)
         while search_obj:
-            res = {'search_page': search_obj, 'index_current_page': search_obj.curent_page_num,
+            res = {'SearchPage': search_obj, 'index_current_page': search_obj.curent_page_num,
                    'page_count': search_obj.pages_count}
             count += 1
             logger.debug('[get_sd_ou][get_next_page][RETURN] | res : %s', res)
@@ -70,10 +70,10 @@ def get_next_page(queue_id='', start_offset=0, **search_kwargs):
     return {'result': 'done', 'index_current_page': search_obj.curent_page_num, 'page_count': search_obj.pages_count}
 
 
-def get_next_article(search_page):
-    articles = search_page.get_articles()
+def get_next_article(SearchPage):
+    articles = SearchPage.get_articles()
     for article_num, article in enumerate(articles):
-        res = {'search_page': Article(article), 'index_current_article': article_num,
+        res = {'SearchPage': Article(article), 'index_current_article': article_num,
                'articles_count': len(articles)}
         yield res
 
@@ -81,7 +81,7 @@ def get_next_article(search_page):
 def get_prev_serach_offset(db_connection, **search_kwargs):
     logger.debug(
         '[get_sd_ou][get_prev_serach_offset][IN] | search_kwargs : %s', search_kwargs)
-    search_hash = Search_page(**search_kwargs).db_hash()
+    search_hash = SearchPage(**search_kwargs).db_hash()
     search = get_search(search_hash, cnx=db_connection)
     if not search:
         search_kwargs['offset'] = 0
