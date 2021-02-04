@@ -188,12 +188,12 @@ def update_article(pii, title, bibtex, keywords, cnx=None, **kwargs):
     return article_id
 
     
-    val = (offset, hash)
-    cursor.execute(sql, val)
-    cnx.commit()
-    search_id = cursor.lastrowid
-    logger.debug('[databaseUtil][update_article][OUT] | search_id : %s', search_id)
-    return search_id
+    # val = (offset, hash)
+    # cursor.execute(sql, val)
+    # cnx.commit()
+    # search_id = cursor.lastrowid
+    # logger.debug('[databaseUtil][update_article][OUT] | search_id : %s', search_id)
+    # return search_id
 
 
 def update_author_scopus(name, id, cnx=None):

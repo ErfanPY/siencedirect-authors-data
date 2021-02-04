@@ -380,7 +380,7 @@ class SearchPage (Page):
         except AttributeError:
             return None
 
-class volume(SearchPage):
+class Volume(SearchPage):
     def __init__(self, url, **kwargs):
         super().__init__(url=url, **kwargs)
     
@@ -454,10 +454,10 @@ class Journal(Page):
             return next_journal.url
 
 class JournalsSearch(Page):
-    def __init__(self, url='', start_page=1, soup_data=None, **search_kwargs):
+    def __init__(self, url='', letter='', start_page=1, soup_data=None, **search_kwargs):
         if not url:
             # url = 'https://www.sciencedirect.com/browse/journals-and-books?contentType=JL&searchPhrase=nano'
-            url = 'https://www.sciencedirect.com/browse/journals-and-books?'
+            url = f'https://www.sciencedirect.com/browse/journals-and-books/{letter}?'
             
             for key, value in search_kwargs.items():
                 if value:
@@ -480,17 +480,19 @@ class JournalsSearch(Page):
         return self.url != ''
 
     def get_journals(self):
-        logger.debug('[ SearchPage ] getting journals | url: %s', self.url)
-        journals_list_div = self.soup.select_one("#publication-list")
-        search_result = journals_list_div.find_all('a')
-        journals = []
-        for journal in search_result:
-            journal_link = journal.get('href')
-            if journal_link:
-                journals.append(
-                    urljoin('https://'+self.url_parts.netloc, journal_link))
-        logger.debug('[ SearchPage ] all articels got | url: %s', self.url)
-        return journals
+        # TODO: get_journal should return all journal of a letter 
+        raise NotImplemented
+        # logger.debug('[ SearchPage ] getting journals | url: %s', self.url)
+        # journals_list_div = self.soup.select_one("#publication-list")
+        # search_result = journals_list_div.find_all('a')
+        # journals = []
+        # for journal in search_result:
+        #     journal_link = journal.get('href')
+        #     if journal_link:
+        #         journals.append(
+        #             urljoin('https://'+self.url_parts.netloc, journal_link))
+        # logger.debug('[ SearchPage ] all articels got | url: %s', self.url)
+        # return journals
 
     @property
     def curent_page_num(self):
@@ -513,12 +515,14 @@ class JournalsSearch(Page):
         return self._pages_count
 
     def next_page(self):
-        next_url = self.soup.select_one('li.next-link > a')
-        try:
-            href = next_url.get('href')
-            return SearchPage(urljoin('https://'+self.url_parts.netloc, href))
-        except AttributeError:
-            return None
+        # TODO: check if the function is correct
+        raise NotImplemented
+        # next_url = self.soup.select_one('li.next-link > a')
+        # try:
+        #     href = next_url.get('href')
+        #     return SearchPage(urljoin('https://'+self.url_parts.netloc, href))
+        # except AttributeError:
+        #     return None
 
 
 class root(Page):
