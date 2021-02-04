@@ -21,6 +21,7 @@ http = requests.Session()
 http.mount("https://", adapter)
 http.mount("http://", adapter)
 
+
 class Url():
     def __init__(self, url, headers={}, **kwargs):
         logger.debug('[ Url ] __init__ | url: %s', url)
@@ -85,6 +86,7 @@ class Url():
 
         return self.url_parts[1:3] == other.url_parts[1:3]
 
+
 class Page(Url):
     def __init__(self, url, do_soup=False, soup_data=None, **kwargs):
         logger.debug('[ Page ] __init__ | url: %s', url)
@@ -115,7 +117,7 @@ class Page(Url):
         try:
             content = self.response.content
         except requests.exceptions.ConnectionError:
-            raise(requests.exceptions.ConnectionError(
+            raise (requests.exceptions.ConnectionError(
                 "[Page] [soup_maker] couldn't make a connection"))
         soup = bs(content, 'html.parser')
         return soup
@@ -170,7 +172,8 @@ class Author(dict):
         return self.first_name + self.last_name
 
     def __getattr__(self, key):
-        return(self[key])
+        return (self[key])
+
 
 def filter_list_in_dict(dict_data, check_key, expected_value, just_first=False):
     matched_list = list(filter(lambda x: x[check_key] == expected_value, dict_data))
@@ -178,28 +181,33 @@ def filter_list_in_dict(dict_data, check_key, expected_value, just_first=False):
         return (matched_list[0] if just_first else matched_list)
     return {} if just_first else [{}, ]
 
+
 class Article(Page):
     def __init__(self, url, do_bibtex=False, soup_data=None, *args, **kwargs):
         self.url = url
         self.pii = self.get_pii()
-        logger.debug('[ Article ] __init__ | pii: %s', self.pii)
+
         super().__init__(url, soup_data=soup_data, *args, **kwargs)
+
         self.bibtex = ''
+        self.bibtex_url = None
+
         self._title = ''
         self._keywords = ''
+
         if do_bibtex:
             self.bibtex = self.export_bibtex()
 
-        self._authors = []
+        self._authors = None
 
     def get_pii(self):
         return self.url.split('/')[-1].replace('#!', '')
-    
+
     @property
     def keywords(self):
         if self._keywords:
             return self._keywords
-        
+
         keywords = ''
         keywords_container = self.soup.select_one('.Keywords')
         if not keywords_container:
@@ -207,28 +215,29 @@ class Article(Page):
         for keyword_group in keywords_container.select('.keywords-section'):
             for keyword in keyword_group.select('.keyword'):
                 keywords += keyword.text + '|'
-        
+
         self._keywords = keywords
         return self._keywords
 
-    def get_article_data(self, *needed_data):
-        """ this is the main function of article it collect all data we need from an article (needed data is spesified from input) 
+    def get_article_data(self):
+        """ this is the main function of article it collect all data we need from an article (needed data is specified from input)
         it get authors name and email and affiliation from article 
         """
-        data = {'pii': self.pii, 'authors': self.authors, 'bibtex': self.bibtex, 'title':self.title, 'keywords':self.keywords}
+        data = {'pii': self.pii, 'authors': self.authors, 'bibtex': self.bibtex, 'title': self.title,
+                'keywords': self.keywords}
 
         return data
 
     def export_bibtex(self):
         self.bibtex_url = Url(
             f'https://www.sciencedirect.com/sdfe/arp/cite?pii={self.pii}&format=text/x-bibtex&wi')
-
         self.bibtex_file_path = f'articles/{self.pii}.bib'
         with open(self.bibtex_file_path, 'ab') as f:
             f.write(http.get(self.bibtex_url, headers=self.headers))
         return self.bibtex_url
 
-    def _author_icons(self, tag_a):
+    @staticmethod
+    def _author_icons(tag_a):
         is_coresponde = bool(tag_a.select('.icon-person'))
         has_email = bool(tag_a.select('.icon-envelope'))
         return {'has_email': has_email, 'is_coresponde': is_coresponde}
@@ -250,10 +259,10 @@ class Article(Page):
             filter(lambda dict: dict['#name'] == 'author-group', authors_groups_list_json))
 
         for group in authors_groups_list_json:  # in authors maybe some group which devides authors
-                group_authors = list(
-                    filter(lambda dict: dict['#name'] == 'author', group['$$']))
-                [authors_list_json.append(group_author) for group_author in group_authors]
-        
+            group_authors = list(
+                filter(lambda dict: dict['#name'] == 'author', group['$$']))
+            [authors_list_json.append(group_author) for group_author in group_authors]
+
         affiliations_data_dict = json_data['authors']['affiliations']
         for index, author_json in enumerate(authors_list_json):
             reference_list = list(filter(lambda dict: dict['#name'] == 'cross-ref', author_json['$$']))
@@ -262,21 +271,23 @@ class Article(Page):
             for affiliation_id in affiliations_id_list:
                 affiliation_json = affiliations_data_dict[affiliation_id]
                 affiliation_fn = list(filter(lambda dict: dict['#name'] == 'textfn', affiliation_json['$$']))[0]
-                if affiliation_fn.get('$$') :
+                if affiliation_fn.get('$$'):
                     affiliation_text_list = list(filter(lambda dict: dict['#name'] == '__text__', affiliation_fn['$$']))
                     for affiliation_text_item in affiliation_text_list:
-                        affiliation_text    += affiliation_text_item['_'] + '||'
-                else :
+                        affiliation_text += affiliation_text_item['_'] + '||'
+                else:
                     affiliation_text += affiliation_fn['_'] + '||'
 
-            first_name = filter_list_in_dict(author_json['$$'], '#name', 'given-name', just_first=True).get('_', 'noFirstName')
-            last_name = filter_list_in_dict(author_json['$$'], '#name', 'surname', just_first=True).get('_', 'noLastName')
+            first_name = filter_list_in_dict(author_json['$$'], '#name', 'given-name', just_first=True).get('_',
+                                                                                                            'noFirstName')
+            last_name = filter_list_in_dict(author_json['$$'], '#name', 'surname', just_first=True).get('_',
+                                                                                                        'noLastName')
             email_check = filter_list_in_dict(author_json['$$'], '#name', 'e-address', just_first=True)
             try:
-                email = email_check['_'] if  email_check else None
+                email = email_check['_'] if email_check else None
             except KeyError:
                 email = email_check['$$'][0]['_']
-            
+
             authors_res[index] = {'first_name': first_name, 'last_name': last_name,
                                   'email': email, 'affiliation': affiliation_text}
         return authors_res
@@ -297,17 +308,18 @@ class Article(Page):
             self._authors = authors_objects
             logger.debug('[ Article ] authors: %s', self._authors)
         return self._authors
-    
+
     @property
     def title(self):
         if not self._title:
             self._title = self.soup.select_one('.title-text').text
         return self._title
 
-class SearchPage (Page):
+
+class SearchPage(Page):
     def __init__(self, url='', show_per_page=100, start_offset=0, soup_data=None, **search_kwargs):
         if not url:
-            #url = f'https://www.sciencedirect.com/search?qs={title}&date={url}&authors={author}&affiliations={affiliation}&show={show_per_page}'
+            # url = f'https://www.sciencedirect.com/search?qs={title}&date={url}&authors={author}&affiliations={affiliation}&show={show_per_page}'
             url = 'https://www.sciencedirect.com/search?'
             for key, value in search_kwargs.items():
                 if value:
@@ -324,7 +336,7 @@ class SearchPage (Page):
         self.offset = self.query.get('offset', start_offset)
         self.offset = self.offset if self.offset != '' else 0
         self.search_kwargs['offset'] = self.offset
-        
+
     def db_hash(self):
         return sha1(json.dumps(self.search_kwargs, sort_keys=True, ensure_ascii=False).encode('utf-8')).hexdigest()
 
@@ -338,11 +350,12 @@ class SearchPage (Page):
         for article in search_result:
             if article.get('href'):
                 article_link = article.get('href')
-                if 'pii' in article_link and not 'pdf' in article_link and not (article_link.split('/')[-1].startswith('B')):
+                if 'pii' in article_link and not 'pdf' in article_link and not (
+                        article_link.split('/')[-1].startswith('B')):
                     articles.append(
-                        urljoin('https://'+self.url_parts.netloc, article_link))
+                        urljoin('https://' + self.url_parts.netloc, article_link))
                     logger.debug(
-                        '[ SearchPage ] one article added | url: %s', self.url)    
+                        '[ SearchPage ] one article added | url: %s', self.url)
         logger.debug('[ SearchPage ] all articels got | url: %s', self.url)
         return articles
 
@@ -376,22 +389,24 @@ class SearchPage (Page):
         next_url = self.soup.select_one('li.next-link > a')
         try:
             href = next_url.get('href')
-            return SearchPage(urljoin('https://'+self.url_parts.netloc, href))
+            return SearchPage(urljoin('https://' + self.url_parts.netloc, href))
         except AttributeError:
             return None
+
 
 class Volume(SearchPage):
     def __init__(self, url, **kwargs):
         super().__init__(url=url, **kwargs)
-    
+
     def get_previous(self):
         previous_volume = self.soup.select_one('.u-padding-xs-hor > div:nth-child(1) > a:nth-child(1)')
-        
+
         return previous_volume.get('href', False)
-    
+
     def get_next(self):
         pass
-        
+
+
 class Journal(Page):
     def __init__(self, url='', journal_name='', page_kwargs={}, **kwargs):
         # https://www.sciencedirect.com/journal/aace-clinical-case-reports/articles-in-press
@@ -400,7 +415,7 @@ class Journal(Page):
         if not url:
             # url = 'https://www.sciencedirect.com/journal/aace-clinical-case-reports/articles-in-press?page=2'
             url = 'https://www.sciencedirect.com/journal/{journal_name}/articles-in-press?'
-            
+
             for key, value in page_kwargs.items():
                 if value:
                     url += '{}={}&'.format(key, value)
@@ -414,14 +429,14 @@ class Journal(Page):
         self.page = self.page if self.page != '' else 1
         self.search_kwargs['page'] = self.page
         self.journal_name = journal_name if journal_name else self.soup.select_one('.anchor-text').text
-        
+
     def db_hash(self):
         return sha1(json.dumps(self.search_kwargs, sort_keys=True, ensure_ascii=False).encode('utf-8')).hexdigest()
 
     def __bool__(self):
         return self.url != ''
 
-    def get_artiless(self):
+    def get_articles(self):
         logger.debug('[ SearchPage ] getting journals | url: %s', self.url)
         journals_list_div = self.soup.select_one(".article-list-items")
         search_result = journals_list_div.find_all('a')
@@ -430,7 +445,7 @@ class Journal(Page):
             journal_link = journal.get('href')
             if journal_link:
                 journals.append(
-                    urljoin('https://'+self.url_parts.netloc, journal_link))
+                    urljoin('https://' + self.url_parts.netloc, journal_link))
         logger.debug('[ SearchPage ] all articels got | url: %s', self.url)
         return journals
 
@@ -450,15 +465,17 @@ class Journal(Page):
 
     def next_page(self):
         if self.curent_page_num < self.pages_count:
-            next_journal = Journal(journal_name=self.journal_name, page_kwargs={'page':self.curent_page_num + 1}, **self.kwargs)
+            next_journal = Journal(journal_name=self.journal_name, page_kwargs={'page': self.curent_page_num + 1},
+                                   **self.kwargs)
             return next_journal.url
+
 
 class JournalsSearch(Page):
     def __init__(self, url='', letter='', start_page=1, soup_data=None, **search_kwargs):
         if not url:
             # url = 'https://www.sciencedirect.com/browse/journals-and-books?contentType=JL&searchPhrase=nano'
             url = f'https://www.sciencedirect.com/browse/journals-and-books/{letter}?'
-            
+            if start_page != 1: search_kwargs['page'] = start_page
             for key, value in search_kwargs.items():
                 if value:
                     url += '{}={}&'.format(key, value)
@@ -467,70 +484,67 @@ class JournalsSearch(Page):
         super().__init__(url, soup_data=soup_data)
 
         self.url = url
+        self.letter = letter
         self.query = dict(self.url_parts.query)
         self.search_kwargs = self.query
-        self.page = self.query.get('page', start_page)
-        self.page = self.page if self.page != '' else 1
-        self.search_kwargs['page'] = self.page
-        
+        self.page_num = self.query.get('page', start_page)
+        self.page_num = int(self.page_num) if self.page_num != '' else 1
+        self.search_kwargs['page'] = self.page_num
+        self._pages_count = None
+
     def db_hash(self):
         return sha1(json.dumps(self.search_kwargs, sort_keys=True, ensure_ascii=False).encode('utf-8')).hexdigest()
 
     def __bool__(self):
         return self.url != ''
 
-    def get_journals(self):
-        # TODO: get_journal should return all journal of a letter 
-        raise NotImplemented
-        # logger.debug('[ SearchPage ] getting journals | url: %s', self.url)
-        # journals_list_div = self.soup.select_one("#publication-list")
-        # search_result = journals_list_div.find_all('a')
-        # journals = []
-        # for journal in search_result:
-        #     journal_link = journal.get('href')
-        #     if journal_link:
-        #         journals.append(
-        #             urljoin('https://'+self.url_parts.netloc, journal_link))
-        # logger.debug('[ SearchPage ] all articels got | url: %s', self.url)
-        # return journals
+    def iterate_journals(self):
+        # TODO: get_journal should return all journal of a letter
 
-    @property
-    def curent_page_num(self):
-        if not hasattr(self, '_curent_page_num'):
-            page_coursor_text = self.soup.select_one(
-                '#srp-pagination > li:nth-child(1)').text
-            if page_coursor_text == 'previous':
-                page_coursor_text = self.soup.select_one('#srp-pagination > li:nth-child(2)').text
-            self._curent_page_num = int(page_coursor_text.split(' ')[1])
-        return self._curent_page_num
+        journals = self._get_page_journals(self)
+        for journal in journals:
+            yield journal
+        next_journal_search_page = self.get_next_page()
+
+        while next_journal_search_page:
+            next_journals = next_journal_search_page._get_page_journals(next_journal_search_page)
+            for next_journal in next_journals:
+                yield next_journal
+            next_journal_search_page = next_journal_search_page.get_next_page()
+
+    @staticmethod
+    def _get_page_journals(journal_search_page):
+        journals_list_div = journal_search_page.soup.select_one("#publication-list")
+        search_result = journals_list_div.find_all('a')
+        journals = []
+
+        for journal in search_result:
+            journal_link = journal.get('href')
+            if journal_link:
+                journals.append(
+                    urljoin('https://' + journal_search_page.url_parts.netloc, journal_link))
+
+        return journals
+
+    def get_next_page(self):
+        if self.page_num < self.pages_count:
+            return JournalsSearch(letter=self.letter, start_page=self.page_num + 1, **self.search_kwargs)
+        return False
 
     @property
     def pages_count(self):
-        if not hasattr(self, '_pages_count'):
-            page_coursor_text = self.soup.select_one(
-                '#srp-pagination > li:nth-child(1)').text
-            if page_coursor_text == 'previous':
-                page_coursor_text = self.soup.select_one('#srp-pagination > li:nth-child(2)').text
-            self._pages_count = int(page_coursor_text.split(' ')[-1])
+        if self._pages_count is None:
+            page_counter_text = self.soup.select_one('.pagination-pages-label').text
+            self._pages_count = int(page_counter_text.split('of')[-1])
         return self._pages_count
-
-    def next_page(self):
-        # TODO: check if the function is correct
-        raise NotImplemented
-        # next_url = self.soup.select_one('li.next-link > a')
-        # try:
-        #     href = next_url.get('href')
-        #     return SearchPage(urljoin('https://'+self.url_parts.netloc, href))
-        # except AttributeError:
-        #     return None
 
 
 class root(Page):
-    def __init__(self, url='', search_kwargs:dict[str, str]={}, **kwargs):
+    def __init__(self, url='', search_kwargs: dict[str, str] = {}, **kwargs):
         if not url:
             # url = 'https://www.sciencedirect.com/browse/journals-and-books?contentType=JL&searchPhrase=nano'
             url = 'https://www.sciencedirect.com/browse/journals-and-books?'
-            
+
             for key, value in search_kwargs.items():
                 if value:
                     url += '{}={}&'.format(key, value)
@@ -544,7 +558,7 @@ class root(Page):
         self.page = self.query.get('page', 1)
         self.page = self.page if self.page != '' else 1
         self.search_kwargs['page'] = self.page
-    
+
     def get_child(self, list_selector, child_selector, includes, excludes):
         """ child_type : div, a,  """
         childs_list_div = self.soup.select_one(list_selector)
@@ -556,12 +570,13 @@ class root(Page):
             exclude_check = all([i not in child_link for i in excludes])
             if child_link and include_check and exclude_check:
                 childs.append(
-                    urljoin('https://'+self.url_parts.netloc, child_link))
+                    urljoin('https://' + self.url_parts.netloc, child_link))
         logger.debug('[ SearchPage ] all childs got | url: %s', self.url)
         return childs
 
     def get_next():
         pass
+
     def attributes():
         """  """
         pass

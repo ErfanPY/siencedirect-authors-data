@@ -24,11 +24,11 @@ def get_node_children(node):
             yield next_journal_search
 
     elif isinstance(node, JournalsSearch):
-        return node.get_journals()
+        return node.iterate_journals()
     elif isinstance(node, Journal):
-        return Journal.get_volumes()
+        return node.get_volumes()
     elif isinstance(node, Volume):
-        return Journal.get_articles()
+        return node.get_articles()
     else:
         raise Exception("Invalid node")    
 
