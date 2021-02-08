@@ -54,6 +54,9 @@ class Url():
             return False
         return True
 
+    def join_url_path_to_self_netloc(self, url_path):
+        return urljoin('https://' + self.url_parts.netloc, url_path)
+
     @property
     def response(self):
         try:
@@ -301,7 +304,7 @@ class Article(Page):
             for index, author_element in enumerate(elements):
                 icons = self._author_icons(author_element)
                 authors_data[index]['is_coresponde'] = icons['is_coresponde']
-                logger.info('Author got, %s', authors_data[index])
+                logger.debug('Author got, %s', authors_data[index])
 
             authors_objects = [Author(**author_data)
                                for author_data in authors_data.values()]
@@ -436,18 +439,42 @@ class Journal(Page):
     def __bool__(self):
         return self.url != ''
 
-    def get_articles(self):
-        logger.debug('[ SearchPage ] getting journals | url: %s', self.url)
-        journals_list_div = self.soup.select_one(".article-list-items")
-        search_result = journals_list_div.find_all('a')
-        journals = []
-        for journal in search_result:
-            journal_link = journal.get('href')
-            if journal_link:
-                journals.append(
-                    urljoin('https://' + self.url_parts.netloc, journal_link))
-        logger.debug('[ SearchPage ] all articels got | url: %s', self.url)
-        return journals
+    def iterate_volumes(self):
+        last_issue_url = self.get_last_issue_url()
+        last_issue = Volume(url=last_issue_url)
+
+        yield last_issue
+        previous_issue_url = ''
+        previous_issue_path = last_issue.get_previous()
+
+        while previous_issue_path:
+            previous_issue_url = self.join_url_path_to_self_netloc(previous_issue_path)
+            previous_issue = Volume(url=previous_issue_url)
+
+            yield previous_issue
+            previous_issue_path = previous_issue.get_previous()
+
+        # issues_page = Page(url=self.url+"/issues")
+        # search_result = issues_page.soup.find_all('a')
+        # journals = set()
+        #
+        # for journal in search_result:
+        #     journal_link = journal.get('href')
+        #
+        #     link_path = Url(journal_link).url_parts.path
+        #
+        #     if "vol" in link_path.split('/'):
+        #         journals.add(
+        #             urljoin('https://' + self.url_parts.netloc, journal_link))
+        #
+        # return journals
+
+
+    def get_last_issue_url(self):
+        issues_iterator = self.soup.select_one("div.issue").children
+        last_issue_path = list(issues_iterator)[0].get('href')
+        last_issue_url = self.join_url_path_to_self_netloc(last_issue_path)
+        return last_issue_url
 
     @property
     def curent_page_num(self):
@@ -503,13 +530,13 @@ class JournalsSearch(Page):
 
         journals = self._get_page_journals(self)
         for journal in journals:
-            yield journal
+            yield Journal(journal)
         next_journal_search_page = self.get_next_page()
 
         while next_journal_search_page:
             next_journals = next_journal_search_page._get_page_journals(next_journal_search_page)
             for next_journal in next_journals:
-                yield next_journal
+                yield Journal(next_journal)
             next_journal_search_page = next_journal_search_page.get_next_page()
 
     @staticmethod
@@ -519,10 +546,9 @@ class JournalsSearch(Page):
         journals = []
 
         for journal in search_result:
-            journal_link = journal.get('href')
-            if journal_link:
-                journals.append(
-                    urljoin('https://' + journal_search_page.url_parts.netloc, journal_link))
+            journal_path = journal.get('href')
+            if any([check in journal_path for check in ['handbook', 'journal', 'bookseries']]):
+                journals.append(urljoin('https://' + journal_search_page.url_parts.netloc, journal_path))
 
         return journals
 
@@ -574,9 +600,9 @@ class root(Page):
         logger.debug('[ SearchPage ] all childs got | url: %s', self.url)
         return childs
 
-    def get_next():
+    def get_next(self):
         pass
 
-    def attributes():
+    def attributes(self):
         """  """
         pass
