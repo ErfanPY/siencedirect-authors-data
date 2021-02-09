@@ -165,7 +165,7 @@ def start_search(self, write_offset=True, search_id=0, start_offset=0, end_offse
             page_offset = str(int(page_offset) + 1)
 
             if write_offset:
-                update_search_offset(hash=page_hash, offset=page_offset, cnx=db_connection)
+                update_search_offset(search_hash=page_hash, offset=page_offset, cnx=db_connection)
 
             self.update_state(state='PROGRESS',
                               meta={'current': index_current_page, 'total': pages_count,

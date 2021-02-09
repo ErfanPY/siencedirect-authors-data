@@ -40,7 +40,7 @@ def scopus_search(self):
         logger.debug(f'getting scopus | name:{name}')
         author = Author(**name, do_scopus=True)
         update_author_scopus(
-            name=author['name'], id=author['id'], cnx=db_connection)
+            name=author['name'], scopus_id=author['id'], cnx=db_connection)
         count += 1
 
     logger.debug('[get_sd_ou][scopus_search][OUT] | authors_count : %s', count)
@@ -173,7 +173,7 @@ def start_search(self, write_offset=True, search_id=0, start_offset=0, end_offse
 
             if write_offset:
                 update_search_offset(
-                    hash=page_hash, offset=page.offset, cnx=db_connection)
+                    search_hash=page_hash, offset=page.offset, cnx=db_connection)
 
             self.update_state(state='PROGRESS',
                               meta={'current': index_current_page, 'total': pages_count,
