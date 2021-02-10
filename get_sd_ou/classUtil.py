@@ -565,44 +565,44 @@ class JournalsSearch(Page):
         return self._pages_count
 
 
-class root(Page):
-    def __init__(self, url='', search_kwargs: dict[str, str] = {}, **kwargs):
-        if not url:
-            # url = 'https://www.sciencedirect.com/browse/journals-and-books?contentType=JL&searchPhrase=nano'
-            url = 'https://www.sciencedirect.com/browse/journals-and-books?'
-
-            for key, value in search_kwargs.items():
-                if value:
-                    url += '{}={}&'.format(key, value)
-
-        logger.debug('[ SearchPage ] __init__ | url: %s', url)
-        super().__init__(url, **kwargs)
-
-        self.url = url
-        self.query = dict(self.url_parts.query)
-        self.search_kwargs = self.query
-        self.page = self.query.get('page', 1)
-        self.page = self.page if self.page != '' else 1
-        self.search_kwargs['page'] = self.page
-
-    def get_child(self, list_selector, child_selector, includes, excludes):
-        """ child_type : div, a,  """
-        childs_list_div = self.soup.select_one(list_selector)
-        search_result = childs_list_div.select(child_selector)
-        childs = []
-        for child in search_result:
-            child_link = child.get('href')
-            include_check = all([i in child_link for i in includes])
-            exclude_check = all([i not in child_link for i in excludes])
-            if child_link and include_check and exclude_check:
-                childs.append(
-                    urljoin('https://' + self.url_parts.netloc, child_link))
-        logger.debug('[ SearchPage ] all childs got | url: %s', self.url)
-        return childs
-
-    def get_next(self):
-        pass
-
-    def attributes(self):
-        """  """
-        pass
+# class root(Page):
+#     def __init__(self, url='', search_kwargs: dict[str, str] = {}, **kwargs):
+#         if not url:
+#             # url = 'https://www.sciencedirect.com/browse/journals-and-books?contentType=JL&searchPhrase=nano'
+#             url = 'https://www.sciencedirect.com/browse/journals-and-books?'
+#
+#             for key, value in search_kwargs.items():
+#                 if value:
+#                     url += '{}={}&'.format(key, value)
+#
+#         logger.debug('[ SearchPage ] __init__ | url: %s', url)
+#         super().__init__(url, **kwargs)
+#
+#         self.url = url
+#         self.query = dict(self.url_parts.query)
+#         self.search_kwargs = self.query
+#         self.page = self.query.get('page', 1)
+#         self.page = self.page if self.page != '' else 1
+#         self.search_kwargs['page'] = self.page
+#
+#     def get_child(self, list_selector, child_selector, includes, excludes):
+#         """ child_type : div, a,  """
+#         childs_list_div = self.soup.select_one(list_selector)
+#         search_result = childs_list_div.select(child_selector)
+#         childs = []
+#         for child in search_result:
+#             child_link = child.get('href')
+#             include_check = all([i in child_link for i in includes])
+#             exclude_check = all([i not in child_link for i in excludes])
+#             if child_link and include_check and exclude_check:
+#                 childs.append(
+#                     urljoin('https://' + self.url_parts.netloc, child_link))
+#         logger.debug('[ SearchPage ] all childs got | url: %s', self.url)
+#         return childs
+#
+#     def get_next(self):
+#         pass
+#
+#     def attributes(self):
+#         """  """
+#         pass
