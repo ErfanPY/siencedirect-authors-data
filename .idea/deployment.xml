@@ -5,7 +5,7 @@
       <paths name="root@185.187.49.75:2275">
         <serverdata>
           <mappings>
-            <mapping deploy="/root" local="$PROJECT_DIR$" />
+            <mapping deploy="/root/sciencedirect-authors-data" local="$PROJECT_DIR$" />
           </mappings>
         </serverdata>
       </paths>
