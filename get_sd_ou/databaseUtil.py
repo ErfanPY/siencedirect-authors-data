@@ -45,21 +45,21 @@ def insert_article(pii, title='', bibtex='', keywords='', cnx=None, **kwargs):
     return article_id
 
 
-def insert_author(first_name, last_name, email='', affiliation='', is_coresponde=False, author_id=None, cnx=None):
+def insert_author(first_name, last_name, email='', affiliation='', is_coresponde=False, id=None, cnx=None):
     name = last_name + '|' + first_name
     sql = "INSERT IGNORE INTO sciencedirect.authors (name, email, affiliation) \
             VALUES (%s, %s, %s)"
 
     val = (name, email, affiliation)
     logger.debug('[databaseUtil][insert_author][IN] | name : %s , email: %s, aff: %s, scopus: %s', name, email,
-                 affiliation, author_id)
+                 affiliation, id)
     cursor = cnx.cursor(buffered=True)
     cursor.execute(sql, val)
     cnx.commit()
-    author_id = cursor.lastrowid
-    if not author_id:
-        author_id = get_author(first_name, last_name, email=email, cnx=cnx)['author_id']
-    return author_id
+    id = cursor.lastrowid
+    if not id:
+        id = get_author(first_name, last_name, email=email, cnx=cnx)['author_id']
+    return id
 
 
 def get_article_author_id(article_id, author_id, cnx=None):
