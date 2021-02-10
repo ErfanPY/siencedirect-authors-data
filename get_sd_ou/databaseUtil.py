@@ -217,6 +217,22 @@ def update_search_offset(offset, search_hash, cnx=None):
 
 # SELECT
 
+def get_status(cnx):
+    cursor = cnx.cursor(buffered=True)
+    sql_queries = {'searchs': 'SELECT count(*) FROM sciencedirect.searchs',
+                   'articles': 'SELECT count(*) FROM sciencedirect.articles',
+                   'authors': 'SELECT count(*) FROM sciencedirect.authors',
+                   'emails': 'SELECT count(*) FROM sciencedirect.authors where email is NOT NULL'}
+
+    sql_results = {}
+    for table_name, sql in sql_queries.items():
+        cursor.execute(sql)
+        result = cursor.fetchone()[0]
+        sql_results[table_name] = result
+    logger.info(f'{sql_results}')
+    return sql_results
+
+
 def get_author(first_name, last_name, email='', cnx=None):
     name = last_name + '|' + first_name
     logger.debug('[db_util][get_author][IN] | name: %s, email: %s', name, email)

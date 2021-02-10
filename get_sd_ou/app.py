@@ -11,7 +11,7 @@ from flask import (Flask, jsonify, make_response,
                    render_template, request, url_for, send_file)
 
 
-from get_sd_ou import get_sd_ou
+from get_sd_ou import get_sd_ou, databaseUtil
 from get_sd_ou.classUtil import SearchPage
 from get_sd_ou.databaseUtil import (get_db_result, get_search,
                                      get_search_suggest, init_db)
@@ -30,12 +30,17 @@ app.config['BROKER_CONNECTION_MAX_RETRIES'] = 0
 app.config['BROKER_CONNECTION_TIMEOUT'] = 120
 
 celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
-
 celery.conf.update(app.config)
-
 redisClient = redis.StrictRedis(host='localhost', port=6379, db=0)
 
-db_connection = init_db()
+_db_connection = None
+
+
+def db_connection():
+    global _db_connection
+    if db_connection is not None:
+        _db_connection = init_db()
+    return _db_connection
 
 @app.route('/scopus_search', methods=['POST'])
 def scopus_search():
@@ -107,12 +112,11 @@ def db_start_search():
     logger.debug('[app] starting task')
     kwargs = dict(request.form)
     kwargs['offset'] = 0
-    database_result = get_db_result(cnx=db_connection, **kwargs)
+    database_result = get_db_result(cnx=db_connection(), **kwargs)
     
     logger.debug('[app][db_start_search] | database_result: %s ', str(database_result)[:20])
     
     return render_template('db_result.html', searchs=database_result)
-    # return str(database_result)
 
 
 @app.route('/db_suggest', methods=['POST'])
@@ -146,11 +150,13 @@ def db_suggest_all():
     logger.debug('[app][db_suggest][OUT] | res : %s', res)
     return jsonify(res)
 
+
 @app.route('/download_db')
 def download_db():
-    _  = '<a href="/return-files/" target="blank"><button>Download!</button></a>'
-    # Generate sql file (or any prefered file format)
-    return send_file('/var/www/PythonProgramming/PythonProgramming/static/images/python.jpg', attachment_filename='python.jpg')
+    _ = '<a href="/return-files/" target="blank"><button>Download!</button></a>'
+    return send_file('/var/www/PythonProgramming/PythonProgramming/static/images/python.jpg',
+                     attachment_filename='python.jpg')
+
 
 @app.route('/login', methods=['POST', 'GET'])
 def login():
@@ -163,6 +169,7 @@ def login():
     # add to cookie
     # redirect ro callback url if exist else to index
     return html
+
 
 @app.route('/start_multi_search', methods=['POST'])
 def multi_search():
@@ -187,6 +194,7 @@ def multi_search():
     resp.set_cookie('task_info_list', json.dumps(prev_task_info_list))
     return resp
 
+
 def start_task(**search_kwargs):
     task = get_sd_ou.start_search.apply_async(kwargs=search_kwargs, queue="main_search")
     
@@ -199,6 +207,7 @@ def start_task(**search_kwargs):
 
     return resp
 
+
 @app.route('/longtask', methods=['POST'])
 def longtask():
     logger.debug('[app] starting task')
@@ -208,6 +217,7 @@ def longtask():
     response = start_task(**kwargs)
     
     return response
+
 
 @app.route('/stop_task/<task_id>', methods=['POST'])
 def stop_task(task_id):
@@ -223,14 +233,17 @@ def stop_task(task_id):
     resp.set_cookie('task_info_list', json.dumps(prev_task_info_list))
     return resp
 
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     return render_template('index.html')
+
 
 @app.route('/update_all_searchs')
 def update_all_searchs():
     task_info_list = json.loads(request.cookies.get('task_info_list', '{}'))
     return json.dumps([url_for('taskstatus', task_id=task_id.split('|')[0]) for task_id in task_info_list])
+
 
 @app.route('/restart_task/<task_id>', methods=['POST'])
 def restart_task(task_id):
@@ -241,6 +254,13 @@ def restart_task(task_id):
     task_kwargs = dict(json.loads(task_kwargs_json))
     cookie_added_response = start_task(**task_kwargs)
     return cookie_added_response
+
+
+@app.route('/journals/status')
+def get_status():
+    status = databaseUtil.get_status(cnx=db_connection())
+    return jsonify(status)
+
 
 @app.route('/taskstatus/<task_id>')
 def taskstatus(task_id):
@@ -275,8 +295,8 @@ def taskstatus(task_id):
     
     form_args_json = [task_info.split('|')[-1] for task_info in prev_task_info_list if task_id in task_info]
     form_args = ''
-    if form_args_json :     
-        form_args_dict = {key:value for (key, value) in json.loads(form_args_json[0]).items() if value}
+    if form_args_json:
+        form_args_dict = {key: value for (key, value) in json.loads(form_args_json[0]).items() if value}
         form_args = ' | '.join([f'{key} : {value}' for (key, value) in form_args_dict.items()])
     response['form'] = form_args
 
