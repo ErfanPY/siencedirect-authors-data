@@ -9,17 +9,18 @@ from get_sd_ou.databaseUtil import insert_article_data, init_db
 
 
 def scrape_and_save_article(article_url_queue, db_connection):
-    first_url = article_url_queue.get()
-    article_url_queue.put(first_url)
-
-    while not article_url_queue.empty():
+    # first_url = article_url_queue.get()
+    # article_url_queue.put(first_url)
+    
+    while True or not article_url_queue.empty():
+        # logger.info(f'[{current_thread().name}] WHILE') 
         url = article_url_queue.get()
 
         article_data = scrape_article_url(url)
         save_article_to_db(article_data, db_connection)
 
         article_url_queue.task_done()
-        logger.info(f"[{current_thread().name}] - Article scraped and saved - url = {url}")
+        logger.info(f"[{current_thread().name}] - SCRAPE & DATABASE | {url}")
 
 
 def scrape_article_url(url):
@@ -27,14 +28,14 @@ def scrape_article_url(url):
     article = Article(url=url)
     article_data = article.get_article_data()
 
-    logger.debug(f"thread: ({current_thread().name})[journal_scraper]-[scrape_article_url] | {url}")
+    # logger.info(f"[{current_thread().name}] SCRAPE done | {url}")
     return article_data
 
 
 def save_article_to_db(article_data, db_connection):
     # todo pass journal_search, journal, volume to insert_article_data to add them all in one to database
     article_id = insert_article_data(**article_data, cnx=db_connection)
-    logger.debug(f"thread: ({current_thread().name})[journal_scraper]-[save_article_to_db] | {article_id}")
+    # logger.info(f"[{current_thread().name}] DATABASE done | {article_id}")
 
 
 def get_node_children(node):
@@ -60,6 +61,7 @@ def iterate_journal_searches():
 
 
 def deep_first_search_for_articles(self_node, article_url_queue):
+    # logger.info('deep_first_search_for_articles')
     node_children = get_node_children(self_node)
 
     if isinstance(self_node, Volume):  # deepest node of tree before articles is Volume
@@ -74,12 +76,12 @@ if __name__ == "__main__":
     logger = logging.getLogger('mainLogger')
     logger.setLevel(logging.INFO)
 
-    article_queue = Queue(maxsize=500)
+    article_queue = Queue(maxsize=50)
     search_thread = Thread(target=deep_first_search_for_articles,
                            args=("ROOT", article_queue))
     search_thread.start()
 
-    for i in range(5):
+    for i in range(10):
         database_connection = init_db()
 
         t = Thread(target=scrape_and_save_article, args=(article_queue, database_connection))
