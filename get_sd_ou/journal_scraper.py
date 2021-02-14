@@ -1,3 +1,6 @@
+import pickle
+import signal
+import sys
 import logging
 
 from get_sd_ou.classUtil import Journal, JournalsSearch, Volume, Article
@@ -38,6 +41,7 @@ def save_article_to_db(article_data, db_connection):
 
 
 def get_node_children(node):
+
     if node == "ROOT":
         yield from iterate_journal_searches()
     elif isinstance(node, JournalsSearch):
@@ -60,6 +64,9 @@ def iterate_journal_searches():
 
 
 def deep_first_search_for_articles(self_node, article_url_queue):
+    if self_node in visited:
+        return
+    visited.add(self_node)
     node_children = get_node_children(self_node)
 
     if isinstance(self_node, Volume):  # deepest node of tree before articles is Volume
@@ -67,22 +74,55 @@ def deep_first_search_for_articles(self_node, article_url_queue):
         list(map(article_url_queue.put, articles))
 
     for child in node_children:
+        graph[self_node] = graph.get(self_node, list()) + [child]
         deep_first_search_for_articles(self_node=child, article_url_queue=article_url_queue)
 
 
+def save_to_pickle(visited_set):
+    with open('visited.pickle', 'wb') as handle:
+        pickle.dump(visited_set, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+def read_from_pickle():
+    with open('visited.pickle', 'rb') as handle:
+        return pickle.load(handle)
+
+
+def exit_gracefully(signum, frame):
+    signal.signal(signal.SIGINT, original_sigint)
+
+    save_to_pickle(visited)
+    print("Shutting down gracefully...")
+    sys.exit(1)
+
+
 if __name__ == "__main__":
+    signal.signal(signal.SIGINT, exit_gracefully)
+
+    original_sigint = signal.getsignal(signal.SIGINT)
+    signal.signal(signal.SIGINT, exit_gracefully)
+
     logger = logging.getLogger('mainLogger')
     logger.setLevel(logging.INFO)
+
+    pickled_data = read_from_pickle()
+    visited = pickled_data if pickled_data else set()
+    graph = {}
 
     article_queue = Queue(maxsize=500)
     search_thread = Thread(target=deep_first_search_for_articles,
                            args=("ROOT", article_queue))
-    search_thread.start()
+    try:
+        search_thread.start()
 
-    for i in range(5):
-        database_connection = init_db()
+        for i in range(5):
+            database_connection = init_db()
 
-        t = Thread(target=scrape_and_save_article, args=(article_queue, database_connection))
-        t.start()
+            t = Thread(target=scrape_and_save_article, args=(article_queue, database_connection))
+            t.start()
 
-    article_queue.join()
+        article_queue.join()
+    except Exception as e:
+        print(e)
+        print("EXCEPTION")
+        save_to_pickle(visited)

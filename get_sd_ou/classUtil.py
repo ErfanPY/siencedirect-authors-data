@@ -103,7 +103,7 @@ class Page(Url):
             self._soup = self._soup_maker()
 
     def __hash__(self):
-        return hash(self.url.url_parts[1:3])
+        return hash(self.url_parts[1:3])
 
     def get_urls(self, include=[]):
         res_urls = []
