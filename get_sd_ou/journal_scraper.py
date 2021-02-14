@@ -50,6 +50,7 @@ def get_node_children(node):
         yield from node.iterate_volumes()
     elif isinstance(node, Volume):
         articles = node.get_articles()
+        save_to_pickle(visited)
         for article in articles:
             yield article
     else:
@@ -80,7 +81,7 @@ def deep_first_search_for_articles(self_node, article_url_queue):
 
 def save_to_pickle(visited_set):
     with open('visited.pickle', 'wb') as handle:
-        pickle.dump(visited_set, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(visited_set, handle, protocol=4)
 
 
 def read_from_pickle():
@@ -88,19 +89,7 @@ def read_from_pickle():
         return pickle.load(handle)
 
 
-def exit_gracefully(signum, frame):
-    signal.signal(signal.SIGINT, original_sigint)
-
-    save_to_pickle(visited)
-    print("Shutting down gracefully...")
-    sys.exit(1)
-
-
 if __name__ == "__main__":
-    signal.signal(signal.SIGINT, exit_gracefully)
-
-    original_sigint = signal.getsignal(signal.SIGINT)
-    signal.signal(signal.SIGINT, exit_gracefully)
 
     logger = logging.getLogger('mainLogger')
     logger.setLevel(logging.INFO)
