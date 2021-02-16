@@ -100,7 +100,7 @@ def write_visited(write_set, cursor=None):
 
 
 def load_visited(cursor=None):
-    results = cursor.execute('SELECT * FROM visited')
+    results = [i[0] for i in cursor.execute('SELECT hash FROM visited')]
     return set(results)
 
         
@@ -130,7 +130,7 @@ if __name__ == "__main__":
     try:
         search_thread.start()
 
-        for i in range(5):
+        for i in range(15):
             database_connection = init_db()
 
             t = Thread(target=scrape_and_save_article, args=(article_queue, database_connection))
