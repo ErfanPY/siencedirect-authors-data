@@ -38,7 +38,6 @@ def scrape_article_url(url):
     return None, None
 
 def save_article_to_db(article_data, db_connection):
-    # todo pass journal_search, journal, volume to insert_article_data to add them all in one to database
     article_id = insert_article_data(**article_data, cnx=db_connection)
     logger.debug(f"thread: ({current_thread().name})[journal_scraper]-[save_article_to_db] | {article_id}")
 

@@ -321,7 +321,6 @@ class Article(Page):
 class SearchPage(Page):
     def __init__(self, url='', show_per_page=100, start_offset=0, soup_data=None, **search_kwargs):
         if not url:
-            # url = f'https://www.sciencedirect.com/search?qs={title}&date={url}&authors={author}&affiliations={affiliation}&show={show_per_page}'
             url = 'https://www.sciencedirect.com/search?'
             for key, value in search_kwargs.items():
                 if value:
@@ -411,11 +410,9 @@ class Volume(SearchPage):
 
 class Journal(Page):
     def __init__(self, url='', journal_name='', page_kwargs={}, **kwargs):
-        # https://www.sciencedirect.com/journal/aace-clinical-case-reports/articles-in-press
         logger.debug('[ SearchPage ] __init__ | url: %s', url)
         super().__init__(url, **kwargs)
         if not url:
-            # url = 'https://www.sciencedirect.com/journal/aace-clinical-case-reports/articles-in-press?page=2'
             url = 'https://www.sciencedirect.com/journal/{journal_name}/articles-in-press?'
 
             for key, value in page_kwargs.items():
@@ -485,7 +482,6 @@ class Journal(Page):
 class JournalsSearch(Page):
     def __init__(self, url='', letter='', start_page=1, soup_data=None, **search_kwargs):
         if not url:
-            # url = 'https://www.sciencedirect.com/browse/journals-and-books?contentType=JL&searchPhrase=nano'
             url = f'https://www.sciencedirect.com/browse/journals-and-books/{letter}?'
             if start_page != 1: search_kwargs['page'] = start_page
             for key, value in search_kwargs.items():
@@ -511,8 +507,6 @@ class JournalsSearch(Page):
         return self.url != ''
 
     def iterate_journals(self):
-        # TODO: get_journal should return all journal of a letter
-
         journals = self._get_page_journals(self)
         for journal in journals:
             yield Journal(journal)
