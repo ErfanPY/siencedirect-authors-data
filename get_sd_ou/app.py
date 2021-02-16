@@ -1,18 +1,15 @@
 #!/usr/bin/env python3
-import json
 import logging
 
-from flask import (Flask, jsonify, make_response,
-                   render_template, request, send_file)
+from flask import (Flask, jsonify, render_template, request)
 
 
-from get_sd_ou import get_sd_ou, databaseUtil
+from get_sd_ou import databaseUtil
 from get_sd_ou.databaseUtil import (get_db_result, get_search_suggest, init_db)
 
 logger = logging.getLogger('mainLogger')
-logger.debug('[app] INIT')
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'top top secret!'
+app.config['SECRET_KEY'] = 'top test that sad test it is a secret secret!'
 
 
 _db_connection = None
@@ -73,36 +70,6 @@ def db_suggest_all():
     logger.debug('[app][db_suggest][OUT] | res : %s', res)
     return jsonify(res)
 
-
-@app.route('/download_db')
-def download_db():
-    _ = '<a href="/return-files/" target="blank"><button>Download!</button></a>'
-    return send_file('/var/www/PythonProgramming/PythonProgramming/static/images/python.jpg',
-                     attachment_filename='python.jpg')
-
-
-@app.route('/start_multi_search', methods=['POST'])
-def multi_search():
-    data = dict(request.form)
-    search_kwargs = {}
-
-    for item in data.get('form', '').split("&"):
-        key, value = item.split('=')
-        search_kwargs[key] = value
-
-    worker_count = int(data.get('worker_count', 1))
-
-    task = get_sd_ou.start_multi_search.apply_async(kwargs={"worker_count":worker_count, **search_kwargs}, queue="main_search")
-
-    task_id_list = task.get()
-
-    cookie_data = request.cookies.get('task_info_list')
-    prev_task_info_list = [] if not cookie_data else json.loads(cookie_data)
-    [prev_task_info_list.append(f'{task_id}|{json.dumps(data)}') for task_id in task_id_list]
-
-    resp = make_response()
-    resp.set_cookie('task_info_list', json.dumps(prev_task_info_list))
-    return resp
 
 @app.route('/journals/status')
 def get_status():
