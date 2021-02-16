@@ -1,20 +1,14 @@
-import pickle
-import signal
-import sys
 import logging
-import os
 
 from get_sd_ou.classUtil import Journal, JournalsSearch, Volume, Article
 from queue import Queue
 from threading import Thread, current_thread, Lock
-import sqlite3
 
 
-# TODO: Do it asynchronously
 from get_sd_ou.databaseUtil import insert_article_data, init_db
 
 
-def scrape_and_save_article(article_url_queue, mysql_connection, sqlite_cursor):
+def scrape_and_save_article(article_url_queue, mysql_connection):
     first_url = article_url_queue.get()
     article_url_queue.put(first_url)
 
@@ -26,7 +20,7 @@ def scrape_and_save_article(article_url_queue, mysql_connection, sqlite_cursor):
             save_article_to_db(article_data, mysql_connection)
 
             article_url_queue.task_done()
-            add_to_persistance(article_hash, sqlite_cursor)
+            add_to_persistance(article_hash, mysql_connection.cursor())
             logger.info(f"[{current_thread().name}] - Article scraped and saved - url = {url}")
         else:
             logger.info(f"[{current_thread().name}] skipped article: {url}")
@@ -72,7 +66,7 @@ def iterate_journal_searches():
         journal_search = journal_search.get_next_page()
 
 
-def deep_first_search_for_articles(self_node, article_url_queue, sqlite_cursor):
+def deep_first_search_for_articles(self_node, article_url_queue, mysql_connection):
     if not self_node.__hash__() in visited:
         node_children = get_node_children(self_node)
 
@@ -81,81 +75,73 @@ def deep_first_search_for_articles(self_node, article_url_queue, sqlite_cursor):
             list(map(article_url_queue.put, articles))
         else:
             for child in node_children:
-                graph[self_node] = graph.get(self_node, list()) + [child]
-                deep_first_search_for_articles(self_node=child, article_url_queue=article_url_queue, sqlite_cursor=sqlite_cursor)
-            add_to_persistance(self_node.__hash__(), sqlite_cursor)
+                deep_first_search_for_articles(self_node=child, article_url_queue=article_url_queue, mysql_connection=mysql_connection)
+        add_to_persistance(self_node.__hash__(), mysql_connection)
     else:
         logger.info(f"[{current_thread().name}] skipped node: {str(self_node)}")
 
-def init_persistance(cursor=None):
-    results = cursor.execute("create table if not exists visited (hash INTEGER)")
+def init_persistance():
+    mysql_connection = init_db()
+    mysql_cursor = mysql_connection.cursor()
+    results = mysql_cursor.execute("create table if not exists sciencedirect.visited (hash INTEGER)")
     print("persistance made")
+
+    return mysql_connection
         
 
-def add_to_persistance(item, cursor):
+def add_to_persistance(item, cnx):
     lock.acquire()
     visited.add(int(item))
     lock.release()
-    res = cursor.execute(f'INSERT INTO visited VALUES ({int(item)})')
+    cursor = cnx.cursor()
+    res = cursor.execute(f'INSERT INTO sciencedirect.visited VALUES ({int(item)})')
 
-def write_visited(write_set, cursor=None):
+
+def write_visited(write_set, mysql_connection=None):
     res = None
+    cursor = mysql_connection.cursor()
     for i in write_set:
-        res = cursor.execute(f'INSERT INTO visited VALUES ({int(i)})')
-    conn.commit()
+        res = cursor.execute(f'INSERT INTO sciencedirect.visited VALUES ({int(i)})')
+    mysql_connection.commit()
     print(res)
 
-    # with open("visited.txt", "w") as file:
-    #     for i in write_set:
-    #         file.write(str(i)+"\n")
 
-
-def load_visited(cursor=None):
-    results = [i[0] for i in cursor.execute('SELECT hash FROM visited')]
-    return set(results)
-
-        
-    # if not os.path.exists("visited.txt"):
-    #     return set()
-    # with open("visited.txt", "r") as file:
-    #     return set([i.strip() for i in file.readlines()])
-
+def load_visited(mysql_connection=None):
+    cursor = mysql_connection.cursor()
+    res = cursor.execute('SELECT hash FROM sciencedirect.visited')
+    if res is None:
+        return set()
+    else:
+        return set([i[0] for i in res])
 
 if __name__ == "__main__":
 
     logger = logging.getLogger('mainLogger')
     logger.setLevel(logging.INFO)
 
-    conn = sqlite3.connect('example.db', check_same_thread=False)
+    mysql_connection = init_persistance()
 
-    sqlite_cursor = conn.cursor()
-    init_persistance(sqlite_cursor)
+    file_data = load_visited(mysql_connection)
+    
 
-    file_data = load_visited(sqlite_cursor)
     visited = file_data if file_data else set()
-    graph = {}
+
     lock = Lock()
 
     article_queue = Queue(maxsize=500)
     search_thread = Thread(target=deep_first_search_for_articles,
-                           args=("ROOT", article_queue, sqlite_cursor))
+                           args=("ROOT", article_queue, mysql_connection))
     try:
         search_thread.start()
 
         for i in range(15):
-            conn = sqlite3.connect('example.db', check_same_thread=False)
+            mysql_connection = init_persistance()
 
-            sqlite_cursor = conn.cursor()
-            database_connection = init_db()
-
-            t = Thread(target=scrape_and_save_article, args=(article_queue, database_connection, sqlite_cursor))
+            t = Thread(target=scrape_and_save_article, args=(article_queue, mysql_connection))
             t.start()
 
         article_queue.join()
     except Exception as e:
         print(e)
         print("EXCEPTION")
-    finally:
-        pass
-        # write_visited(visited, db_cursor)
-        # conn.close()
+
