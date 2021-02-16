@@ -16,7 +16,7 @@ retry_strategy = Retry(
     status_forcelist=[429, 500, 502, 503, 504],
     method_whitelist=["HEAD", "GET", "OPTIONS"]
 )
-adapter = HTTPAdapter(max_retries=retry_strategy)
+adapter = HTTPAdapter(max_retries=retry_strategy, pool_maxsize=20)
 http = requests.Session()
 http.mount("https://", adapter)
 http.mount("http://", adapter)
