@@ -20,7 +20,7 @@ def scrape_and_save_article(article_url_queue, mysql_connection):
             save_article_to_db(article_data, mysql_connection)
 
             article_url_queue.task_done()
-            add_to_persistance(article_hash, mysql_connection.cursor())
+            add_to_persistance(article_hash, mysql_connection)
             logger.info(f"[{current_thread().name}] - Article scraped and saved - url = {url}")
         else:
             logger.info(f"[{current_thread().name}] skipped article: {url}")
@@ -83,7 +83,9 @@ def deep_first_search_for_articles(self_node, article_url_queue, mysql_connectio
 def init_persistance():
     mysql_connection = init_db()
     mysql_cursor = mysql_connection.cursor()
-    results = mysql_cursor.execute("create table if not exists sciencedirect.visited (hash INTEGER)")
+    results = mysql_cursor.execute("create table if not exists sciencedirect.visited (hash INTEGER);")
+    mysql_connection.commit()
+
     print("persistance made")
 
     return mysql_connection
@@ -94,25 +96,26 @@ def add_to_persistance(item, cnx):
     visited.add(int(item))
     lock.release()
     cursor = cnx.cursor()
-    res = cursor.execute(f'INSERT INTO sciencedirect.visited VALUES ({int(item)})')
+    res = cursor.execute(f'INSERT INTO sciencedirect.visited VALUES ({int(item)});')
+    cnx.commit()
+
 
 
 def write_visited(write_set, mysql_connection=None):
     res = None
     cursor = mysql_connection.cursor()
     for i in write_set:
-        res = cursor.execute(f'INSERT INTO sciencedirect.visited VALUES ({int(i)})')
+        res = cursor.execute(f'INSERT INTO sciencedirect.visited VALUES ({int(i)});')
     mysql_connection.commit()
+    
     print(res)
 
 
 def load_visited(mysql_connection=None):
     cursor = mysql_connection.cursor()
-    res = cursor.execute('SELECT hash FROM sciencedirect.visited')
-    if res is None:
-        return set()
-    else:
-        return set([i[0] for i in res])
+    cursor.execute('SELECT hash FROM sciencedirect.visited;')
+    res = [i[0] for i in cursor.fetchall()]
+    return set(res)
 
 if __name__ == "__main__":
 
