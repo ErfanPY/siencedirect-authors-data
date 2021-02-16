@@ -25,7 +25,7 @@ class TestSearchPage(unittest.TestCase):
     def next_page(self):
         self.assertTrue(True)
     
-    def curent_page_num(self):
+    def current_page_num(self):
         self.assertTrue(True)
         return True
 

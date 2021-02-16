@@ -304,8 +304,8 @@ def get_all_search(cnx=None):
 
     cursor.execute(sql)
 
-    myresult = cursor.fetchall()
-    return myresult
+    result = cursor.fetchall()
+    return result
 
 
 def get_search_articles(search_id, cnx=None):
@@ -320,9 +320,9 @@ def get_search_articles(search_id, cnx=None):
     val = (search_id,)
     cursor.execute(sql, val)
 
-    myresult = cursor.fetchall()
-    logger.debug('[databaseUtil][get_search_articles][OUT] | result : %s', myresult)
-    return myresult
+    my_result = cursor.fetchall()
+    logger.debug('[databaseUtil][get_search_articles][OUT] | result : %s', my_result)
+    return my_result
 
 
 def get_db_result(cnx=None, **search_kwargs):
@@ -388,9 +388,9 @@ def get_article_authors(article_id, cnx=None):
     val = (article_id,)
     cursor.execute(sql, val)
 
-    myresult = cursor.fetchall()
-    logger.debug('[db_util][get_article_authors][OUT] | result: %s', myresult)
-    return myresult
+    my_result = cursor.fetchall()
+    logger.debug('[db_util][get_article_authors][OUT] | result: %s', my_result)
+    return my_result
 
 
 def get_articles_of_author(sql, val, cnx=None):

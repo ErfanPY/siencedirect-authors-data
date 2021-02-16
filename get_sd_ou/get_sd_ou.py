@@ -51,7 +51,7 @@ def get_next_page(start_offset=0, **search_kwargs):
     while True:
         search_obj = SearchPage(start_offset=start_offset, **search_kwargs)
         while search_obj:
-            res = {'SearchPage': search_obj, 'index_current_page': search_obj.curent_page_num,
+            res = {'SearchPage': search_obj, 'index_current_page': search_obj.current_page_num,
                    'page_count': search_obj.pages_count}
             count += 1
             logger.debug('[get_sd_ou][get_next_page][RETURN] | res : %s', res)
@@ -61,7 +61,7 @@ def get_next_page(start_offset=0, **search_kwargs):
             break
         search_kwargs['date'] = str(int(search_kwargs.get('date')) - 1)
     logger.debug('[get_sd_ou][get_next_page][OUT] | count : %s', count)
-    return {'result': 'done', 'index_current_page': search_obj.curent_page_num, 'page_count': search_obj.pages_count}
+    return {'result': 'done', 'index_current_page': search_obj.current_page_num, 'page_count': search_obj.pages_count}
 
 
 def get_next_article(SearchPage):
@@ -72,7 +72,7 @@ def get_next_article(SearchPage):
         yield res
 
 
-def get_prev_serach_offset(db_connection, **search_kwargs):
+def get_prev_search_offset(db_connection, **search_kwargs):
     search_hash = SearchPage(**search_kwargs).db_hash()
     search = get_search(search_hash, cnx=db_connection)
     if not search:
@@ -81,7 +81,7 @@ def get_prev_serach_offset(db_connection, **search_kwargs):
             search_hash=search_hash, **search_kwargs, cnx=db_connection)
         search = {'search_id': search_id, 'offset': 0}
     logger.debug(
-        '[get_sd_ou][get_prev_serach_offset][OUT] continue saved search | search_id : %s, offset : %s', search['search_id'], search['offset'])
+        '[get_sd_ou][get_prev_search_offset][OUT] continue saved search | search_id : %s, offset : %s', search['search_id'], search['offset'])
     return search['search_id'], search['offset']
 
 
@@ -89,7 +89,7 @@ def get_prev_serach_offset(db_connection, **search_kwargs):
 def start_multi_search(self, worker_count=1, worker_offset_count=100, **search_kwargs):
     db_connection = init_db()
 
-    search_id, offset = get_prev_serach_offset(
+    search_id, offset = get_prev_search_offset(
         **search_kwargs, db_connection=db_connection)
 
     db_connection.close()
@@ -124,7 +124,7 @@ def start_search(self, write_offset=True, search_id=0, start_offset=0, end_offse
     task_id = self.request.id.__str__()
 
     if not start_offset:
-        search_id, search_kwargs['offset'] = get_prev_serach_offset(
+        search_id, search_kwargs['offset'] = get_prev_search_offset(
             **search_kwargs, db_connection=db_connection)
     else:
         search_id = search_id
@@ -133,7 +133,7 @@ def start_search(self, write_offset=True, search_id=0, start_offset=0, end_offse
     count = 0
     cleaned_search_kwargs = {k: v for k, v in search_kwargs.items() if v not in [
         '', ' ', [], None]}
-    cleaned_search_kwargs_reper = " | ".join(
+    cleaned_search_kwargs_repr = " | ".join(
         [': '.join([k, str(v)]) for k, v in cleaned_search_kwargs.items()])
     for page_res in get_next_page(start_offset=start_offset, **search_kwargs):
         page, index_current_page, pages_count = page_res.values()
@@ -177,7 +177,7 @@ def start_search(self, write_offset=True, search_id=0, start_offset=0, end_offse
 
             self.update_state(state='PROGRESS',
                               meta={'current': index_current_page, 'total': pages_count,
-                                    'status': f'Searching with this Fields: {cleaned_search_kwargs_reper}<br />{index_current_article}/{articles_count} Article<br /> {article.url}'})
+                                    'status': f'Searching with this Fields: {cleaned_search_kwargs_repr}<br />{index_current_article}/{articles_count} Article<br /> {article.url}'})
             count += 1
             time.sleep(1)
         _first_page = False

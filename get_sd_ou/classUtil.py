@@ -358,27 +358,27 @@ class SearchPage(Page):
                         urljoin('https://' + self.url_parts.netloc, article_link))
                     logger.debug(
                         '[ SearchPage ] one article added | url: %s', self.url)
-        logger.debug('[ SearchPage ] all articels got | url: %s', self.url)
+        logger.debug('[ SearchPage ] all articles got | url: %s', self.url)
         return articles
 
     @property
-    def curent_page_num(self):
-        if not hasattr(self, '_curent_page_num'):
-            page_coursor_text = self.soup.select_one(
+    def current_page_num(self):
+        if not hasattr(self, '_current_page_num'):
+            page_courser_text = self.soup.select_one(
                 '#srp-pagination > li:nth-child(1)').text
-            if page_coursor_text == 'previous':
-                page_coursor_text = self.soup.select_one('#srp-pagination > li:nth-child(2)').text
-            self._curent_page_num = int(page_coursor_text.split(' ')[1])
-        return self._curent_page_num
+            if page_courser_text == 'previous':
+                page_courser_text = self.soup.select_one('#srp-pagination > li:nth-child(2)').text
+            self._current_page_num = int(page_courser_text.split(' ')[1])
+        return self._current_page_num
 
     @property
     def pages_count(self):
         if not hasattr(self, '_pages_count'):
-            page_coursor_text = self.soup.select_one(
+            page_courser_text = self.soup.select_one(
                 '#srp-pagination > li:nth-child(1)').text
-            if page_coursor_text == 'previous':
-                page_coursor_text = self.soup.select_one('#srp-pagination > li:nth-child(2)').text
-            self._pages_count = int(page_coursor_text.split(' ')[-1])
+            if page_courser_text == 'previous':
+                page_courser_text = self.soup.select_one('#srp-pagination > li:nth-child(2)').text
+            self._pages_count = int(page_courser_text.split(' ')[-1])
         return self._pages_count
 
     @property
@@ -462,22 +462,22 @@ class Journal(Page):
 
 
     @property
-    def curent_page_num(self):
-        if not hasattr(self, '_curent_page_num'):
-            page_coursor_text = self.soup.select_one('pagination-pages-label').text
-            self._curent_page_num = int(page_coursor_text.split('of')[0].split('page')[-1])
-        return self._curent_page_num
+    def current_page_num(self):
+        if not hasattr(self, '_current_page_num'):
+            page_courser_text = self.soup.select_one('pagination-pages-label').text
+            self._current_page_num = int(page_courser_text.split('of')[0].split('page')[-1])
+        return self._current_page_num
 
     @property
     def pages_count(self):
         if not hasattr(self, '_pages_count'):
-            page_coursor_text = self.soup.select_one('pagination-pages-label').text
-            self._pages_count = int(page_coursor_text.split('of')[-1])
+            page_courser_text = self.soup.select_one('pagination-pages-label').text
+            self._pages_count = int(page_courser_text.split('of')[-1])
         return self._pages_count
 
     def next_page(self):
-        if self.curent_page_num < self.pages_count:
-            next_journal = Journal(journal_name=self.journal_name, page_kwargs={'page': self.curent_page_num + 1},
+        if self.current_page_num < self.pages_count:
+            next_journal = Journal(journal_name=self.journal_name, page_kwargs={'page': self.current_page_num + 1},
                                    **self.kwargs)
             return next_journal.url
 
