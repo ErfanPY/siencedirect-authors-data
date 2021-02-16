@@ -30,7 +30,6 @@ def result_repr(res_dict):
 
 
 def insert_article(pii, title='', bibtex='', keywords='', cnx=None, **kwargs):
-    # update = UPDATE articles SET title=%S
     cursor = cnx.cursor(buffered=True)
     sql = 'INSERT IGNORE INTO sciencedirect.articles (pii, title, bibtex, keywords) VALUES (%s, %s, %s, %s);'
     val = (pii, title, bibtex, keywords)
@@ -80,7 +79,6 @@ def get_search_article_id(search_id, article_id, cnx=None):
 
 def connect_article_author(article_id, author_id, is_corresponde=0, cnx=None):
     cursor = cnx.cursor(buffered=True)
-    # TODO connect article with pii (get article id from articles from pii)
     sql = "INSERT IGNORE INTO sciencedirect.article_authors " \
           "(article_id, author_id, is_corresponde) VALUES (%s, %s, %s);"
     val = (article_id, author_id, is_corresponde)
@@ -93,51 +91,6 @@ def connect_article_author(article_id, author_id, is_corresponde=0, cnx=None):
         '[databaseUtil][connect_article_author][OUT] | article_id: %s  author_id: %s, connection_id: %s', article_id,
         author_id, connection_id)
     return connection_id
-
-
-def connect_search_article(search_id, article_id, cnx=None):
-    # TODO connect article with pii (get article id from articles from pii)
-    sql = "INSERT IGNORE INTO sciencedirect.search_articles (search_id, article_id) VALUES (%s, %s);"
-    val = (search_id, article_id)
-    logger.debug('[databaseUtil][connect_search_article][IN] | search_id : %s, article_id: %s', search_id, article_id)
-    cursor = cnx.cursor(buffered=True)
-    cursor.execute(sql, val)
-    cnx.commit()
-    connection_id = cursor.lastrowid
-    if not connection_id:
-        connection_id = get_search_article_id(search_id, article_id, cnx=cnx)
-    logger.debug(
-        '[databaseUtil][connect_search_article][OUT] | search_id: %s  article_id: %s, connection_id: %s', search_id,
-        article_id, connection_id)
-    return connection_id
-
-
-def insert_search(search_hash, cnx=None, **search_kwargs):
-    logger.debug('[databaseUtil][insert_search][IN] | search_hash : %s, search_kwargs : %s', search_hash, search_kwargs)
-    cursor = cnx.cursor(buffered=True)
-    sql = "INSERT INTO sciencedirect.searchs (hash, date, qs, pub, authors, affiliation," \
-          " volume, issue, page, tak, title, refrences, docId, offset) VALUES ("
-    val = []
-    key_list = ['date', 'qs', 'pub', 'authors', 'affiliation', 'volume', 'issue', 'page', 'tak', 'title', 'refrences',
-                'docId', 'offset']
-
-    val.append(search_hash)
-    sql += '%s, '
-
-    for _ in key_list:
-        sql += '%s, '
-    sql = sql[:-2]
-    sql += ');'
-
-    for key in key_list:
-        value = search_kwargs.get(key, '')
-        value = value if value is not None else ''
-        val.append(value)
-    cursor.execute(sql, val)
-    search_id = cursor.lastrowid
-    cnx.commit()
-    logger.debug('[databaseUtil][insert_search][OUT] | sql : %s, val : %s, search_id : %s', sql, val, search_id)
-    return search_id
 
 
 def insert_multi_author(authors_list, cnx=None):
@@ -185,13 +138,6 @@ def update_article(pii, title, bibtex, keywords, cnx=None, **kwargs):
 
     return article_id
 
-    # val = (offset, hash)
-    # cursor.execute(sql, val)
-    # cnx.commit()
-    # search_id = cursor.lastrowid
-    # logger.debug('[databaseUtil][update_article][OUT] | search_id : %s', search_id)
-    # return search_id
-
 
 def update_author_scopus(name, scopus_id, cnx=None):
     cursor = cnx.cursor(buffered=True)
@@ -203,24 +149,12 @@ def update_author_scopus(name, scopus_id, cnx=None):
     return author_id
 
 
-def update_search_offset(offset, search_hash, cnx=None):
-    logger.debug('[databaseUtil][update_search_offset][IN] | offset : %s, hash : %s', offset, search_hash)
-    cursor = cnx.cursor(buffered=True)
-    sql = 'UPDATE sciencedirect.searchs SET offset=%s WHERE hash=%s LIMIT 1;'
-    val = (offset, search_hash)
-    cursor.execute(sql, val)
-    cnx.commit()
-    search_id = cursor.lastrowid
-    logger.debug('[databaseUtil][update_search_offset][OUT] | search_id : %s', search_id)
-    return search_id
-
 
 # SELECT
 
 def get_status(cnx):
     cursor = cnx.cursor(buffered=True)
-    sql_queries = {'searchs': 'SELECT count(*) FROM sciencedirect.searchs',
-                   'articles': 'SELECT count(*) FROM sciencedirect.articles',
+    sql_queries = {'articles': 'SELECT count(*) FROM sciencedirect.articles',
                    'authors': 'SELECT count(*) FROM sciencedirect.authors',
                    'emails': 'SELECT count(*) FROM sciencedirect.authors where email is NOT NULL'}
 
@@ -257,89 +191,16 @@ def get_article(pii, cnx=None):
     return fetch_res
 
 
-def get_search_suggest(input_key, input_value, cnx=None):
-    logger.debug('[databaseUtil][get_search_suggest][IN] | input_key : %s, input_value : %s', input_key, input_value)
-    cursor = cnx.cursor(buffered=True)
-    sql = "SELECT " + str(input_key) + " FROM sciencedirect.searchs WHERE " + str(input_key) + " LIKE %s;"
-    cursor.execute(sql, ('%' + input_value + '%',))
-    fetch_res = list(set([i[0] for i in cursor.fetchall()]))
-    logger.debug('[databaseUtil][get_search_suggest][OUT] | input_key : %s, input_value : %s, fetch_res : %s',
-                 input_key, input_value, fetch_res)
-    return fetch_res
-
-
-def get_search_suggest_all(cnx=None, **search_kwargs):
-    logger.debug('[databaseUtil][get_search_suggest][IN] | search_kwargs : %s', search_kwargs)
-    cursor = cnx.cursor(buffered=True, dictionary=True)
-    sql = "SELECT * FROM sciencedirect.searchs WHERE "
-    val = []
-    for key, value in search_kwargs.items():
-        if value:
-            val.append('%' + value + "%")
-            sql += key + ' LIKE %s AND '
-    sql = sql[:-5]
-    sql += ';'
-    cursor.execute(sql, val)
-    fetch_res = cursor.fetchall()
-    logger.debug('[databaseUtil][get_search_suggest][OUT] | search_kwargs : %s, fetch_res : %s', search_kwargs,
-                 fetch_res)
-    return fetch_res
-
-
-def get_search(search_hash, cnx=None):
-    logger.debug('[databaseUtil][get_search][IN] | search_hash : %s', search_hash)
-    cursor = cnx.cursor(buffered=True, dictionary=True)
-    sql = "SELECT * FROM sciencedirect.searchs WHERE hash = %s LIMIT 1"
-
-    cursor.execute(sql, (search_hash,))
-    fetch_res = cursor.fetchone()
-    cursor.reset()
-    logger.debug('[databaseUtil][get_search][OUT] | fetch_res : %s', fetch_res)
-    return fetch_res
-
-
-def get_all_search(cnx=None):
-    cursor = cnx.cursor(buffered=True, dictionary=True)
-    sql = 'SELECT * FROM sciencedirect.searchs'
-
-    cursor.execute(sql)
-
-    result = cursor.fetchall()
-    return result
-
-
-def get_search_articles(search_id, cnx=None):
-    logger.debug('[databaseUtil][get_search_articles][IN] | search_id : %s', search_id)
-    cursor = cnx.cursor(buffered=True, dictionary=True)
-    sql = "SELECT t3.*\
-          FROM sciencedirect.searchs AS t1\
-          JOIN sciencedirect.search_articles AS t2 ON t1.search_id = t2.search_id\
-          JOIN sciencedirect.articles AS t3 ON t2.article_id = t3.article_id\
-          WHERE t2.search_id = %s"
-
-    val = (search_id,)
-    cursor.execute(sql, val)
-
-    my_result = cursor.fetchall()
-    logger.debug('[databaseUtil][get_search_articles][OUT] | result : %s', my_result)
-    return my_result
-
 
 def get_db_result(cnx=None, **search_kwargs):
     logger.debug('[databaseUtil][get_db_result][IN] | search_kwargs : %s', search_kwargs)
-    searchs = {}
-    for search in get_search_suggest_all(cnx=cnx, **search_kwargs):
-        del search['hash']
-        search_rep = result_repr(search)
-        searchs[search_rep] = {}
-        for article in get_search_articles(search['search_id'], cnx=cnx):
-            article_rep = result_repr(article)
-            searchs[search_rep][article_rep] = []
-            for author in get_article_authors(article['article_id'], cnx=cnx):
-                author_rep = result_repr(author)
-                searchs[search_rep][article_rep].append(author_rep)
-    logger.debug('[databaseUtil][get_db_result][OUT] | searchs : %s', searchs)
-    return searchs
+
+    for article in get_search_articles(search['search_id'], cnx=cnx):
+        article_rep = result_repr(article)
+        searchs[search_rep][article_rep] = []
+        for author in get_article_authors(article['article_id'], cnx=cnx):
+            author_rep = result_repr(author)
+            searchs[search_rep][article_rep].append(author_rep)
 
 
 def is_article_exist(pii, cnx=None):
@@ -399,18 +260,12 @@ def get_articles_of_author(sql, val, cnx=None):
 
 
 def execute_scripts_from_file(filename, cnx=None):
-    # Open and read the file as a single buffer
     fd = open(filename, 'r')
     sql_file = fd.read()
     fd.close()
 
-    # all SQL commands (split on ';')
     sql_commands = sql_file.split(';')
-    # Execute every command from the input file
     for command in sql_commands:
-        # This will skip and report errors
-        # For example, if the tables do not yet exist, this will skip over
-        # the DROP TABLE commands
         try:
             if command.rstrip() != '':
                 cnx.execute(command)
