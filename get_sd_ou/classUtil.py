@@ -27,8 +27,6 @@ class Url():
         logger.debug('[ Url ] __init__ | url: %s', url)
         self.url = url
         self._response_headers = None
-        # self._response = None #this would be created when requested
-        # self._content = None #this would be created when requested
 
         if not headers:
             self.headers = {
@@ -253,10 +251,7 @@ class Article(Page):
 
         authors_res = {}
         authors_list_json = []
-        # affiliations_list = re.findall(r'country[^\]\}]*"([^\]\}]*)"', json_element)
-        # if not affiliations_list :
-        #     #TODO
-        #     affiliations_list = [' ']
+
         authors_groups_list_json = json_data['authors']['content']
         authors_groups_list_json = list(
             filter(lambda dict: dict['#name'] == 'author-group', authors_groups_list_json))
@@ -458,27 +453,13 @@ class Journal(Page):
             yield previous_issue
             previous_issue_path = previous_issue.get_previous()
 
-        # issues_page = Page(url=self.url+"/issues")
-        # search_result = issues_page.soup.find_all('a')
-        # journals = set()
-        #
-        # for journal in search_result:
-        #     journal_link = journal.get('href')
-        #
-        #     link_path = Url(journal_link).url_parts.path
-        #
-        #     if "vol" in link_path.split('/'):
-        #         journals.add(
-        #             urljoin('https://' + self.url_parts.netloc, journal_link))
-        #
-        # return journals
-
 
     def get_last_issue_url(self):
         issues_iterator = self.soup.select_one("div.issue").children
         last_issue_path = list(issues_iterator)[0].get('href')
         last_issue_url = self.join_url_path_to_self_netloc(last_issue_path)
         return last_issue_url
+
 
     @property
     def curent_page_num(self):
@@ -567,46 +548,3 @@ class JournalsSearch(Page):
             page_counter_text = self.soup.select_one('.pagination-pages-label').text
             self._pages_count = int(page_counter_text.split('of')[-1])
         return self._pages_count
-
-
-# class root(Page):
-#     def __init__(self, url='', search_kwargs: dict[str, str] = {}, **kwargs):
-#         if not url:
-#             # url = 'https://www.sciencedirect.com/browse/journals-and-books?contentType=JL&searchPhrase=nano'
-#             url = 'https://www.sciencedirect.com/browse/journals-and-books?'
-#
-#             for key, value in search_kwargs.items():
-#                 if value:
-#                     url += '{}={}&'.format(key, value)
-#
-#         logger.debug('[ SearchPage ] __init__ | url: %s', url)
-#         super().__init__(url, **kwargs)
-#
-#         self.url = url
-#         self.query = dict(self.url_parts.query)
-#         self.search_kwargs = self.query
-#         self.page = self.query.get('page', 1)
-#         self.page = self.page if self.page != '' else 1
-#         self.search_kwargs['page'] = self.page
-#
-#     def get_child(self, list_selector, child_selector, includes, excludes):
-#         """ child_type : div, a,  """
-#         childs_list_div = self.soup.select_one(list_selector)
-#         search_result = childs_list_div.select(child_selector)
-#         childs = []
-#         for child in search_result:
-#             child_link = child.get('href')
-#             include_check = all([i in child_link for i in includes])
-#             exclude_check = all([i not in child_link for i in excludes])
-#             if child_link and include_check and exclude_check:
-#                 childs.append(
-#                     urljoin('https://' + self.url_parts.netloc, child_link))
-#         logger.debug('[ SearchPage ] all childs got | url: %s', self.url)
-#         return childs
-#
-#     def get_next(self):
-#         pass
-#
-#     def attributes(self):
-#         """  """
-#         pass

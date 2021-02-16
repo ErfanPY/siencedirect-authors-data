@@ -2,20 +2,6 @@ import unittest
 
 from get_sd_ou import classUtil
 
-# classUtil.SearchPage.db_hash
-# classUtil.SearchPage.get_articles
-# classUtil.SearchPage.next_page()
-# classUtil.SearchPage.curent_page_num
-# classUtil.SearchPage.total_article_count
-
-# classUtil.Article
-# classUtil.Author
-
-# classUtil.Journal
-# classUtil.JournalsSearch
-
-# classUtil.Page
-# classUtil.Url
 
 class TestSearchPage(unittest.TestCase):
     def test_get_articles(self):
