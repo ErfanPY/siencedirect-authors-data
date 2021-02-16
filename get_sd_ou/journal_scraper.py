@@ -2,10 +2,13 @@ import pickle
 import signal
 import sys
 import logging
+import os
 
 from get_sd_ou.classUtil import Journal, JournalsSearch, Volume, Article
 from queue import Queue
 from threading import Thread, current_thread
+import sqlite3
+
 
 # TODO: Do it asynchronously
 from get_sd_ou.databaseUtil import insert_article_data, init_db
@@ -50,7 +53,7 @@ def get_node_children(node):
         yield from node.iterate_volumes()
     elif isinstance(node, Volume):
         articles = node.get_articles()
-        save_to_pickle(visited)
+        write_visited(visited, db_cursor)
         for article in articles:
             yield article
     else:
@@ -65,28 +68,46 @@ def iterate_journal_searches():
 
 
 def deep_first_search_for_articles(self_node, article_url_queue):
-    if self_node in visited:
+    if self_node.__hash__() in visited:
         return
-    visited.add(self_node)
     node_children = get_node_children(self_node)
 
     if isinstance(self_node, Volume):  # deepest node of tree before articles is Volume
         articles = list(node_children)
         list(map(article_url_queue.put, articles))
+        node_children = []
 
     for child in node_children:
         graph[self_node] = graph.get(self_node, list()) + [child]
         deep_first_search_for_articles(self_node=child, article_url_queue=article_url_queue)
+    visited.add(self_node.__hash__())
+
+def init_persistance(cursor=None):
+    results = cursor.execute("create table if not exists visited (hash INTEGER)")
+    print("persistance made")
+        
+
+def write_visited(write_set, cursor=None):
+    res = None
+    for i in write_set:
+        res = cursor.execute(f'INSERT INTO visited VALUES ({int(i)})')
+    conn.commit()
+    print(res)
+
+    # with open("visited.txt", "w") as file:
+    #     for i in write_set:
+    #         file.write(str(i)+"\n")
 
 
-def save_to_pickle(visited_set):
-    with open('visited.pickle', 'wb') as handle:
-        pickle.dump(visited_set, handle, protocol=4)
+def load_visited(cursor=None):
+    results = cursor.execute('SELECT * FROM visited')
+    return set(results)
 
-
-def read_from_pickle():
-    with open('visited.pickle', 'rb') as handle:
-        return pickle.load(handle)
+        
+    # if not os.path.exists("visited.txt"):
+    #     return set()
+    # with open("visited.txt", "r") as file:
+    #     return set([i.strip() for i in file.readlines()])
 
 
 if __name__ == "__main__":
@@ -94,8 +115,13 @@ if __name__ == "__main__":
     logger = logging.getLogger('mainLogger')
     logger.setLevel(logging.INFO)
 
-    pickled_data = read_from_pickle()
-    visited = pickled_data if pickled_data else set()
+    conn = sqlite3.connect('example.db', check_same_thread=False)
+
+    db_cursor = conn.cursor()
+    init_persistance(db_cursor)
+
+    file_data = load_visited(db_cursor)
+    visited = file_data if file_data else set()
     graph = {}
 
     article_queue = Queue(maxsize=500)
@@ -114,4 +140,6 @@ if __name__ == "__main__":
     except Exception as e:
         print(e)
         print("EXCEPTION")
-        save_to_pickle(visited)
+    finally:
+        write_visited(visited, db_cursor)
+        # conn.close()
