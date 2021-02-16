@@ -21,21 +21,25 @@ def scrape_and_save_article(article_url_queue, db_connection):
     while not article_url_queue.empty():
         url = article_url_queue.get()
 
-        article_data = scrape_article_url(url)
-        save_article_to_db(article_data, db_connection)
+        article_data, article_hash = scrape_article_url(url)
+        if not article_data is None:
+            save_article_to_db(article_data, db_connection)
 
-        article_url_queue.task_done()
-        logger.info(f"[{current_thread().name}] - Article scraped and saved - url = {url}")
+            article_url_queue.task_done()
+            visited.add(article_hash)
+            logger.info(f"[{current_thread().name}] - Article scraped and saved - url = {url}")
 
 
 def scrape_article_url(url):
 
     article = Article(url=url)
-    article_data = article.get_article_data()
+    article_hash = article.__hash__()
+    if not article_hash in visited:
+        article_data = article.get_article_data()
 
-    logger.debug(f"thread: ({current_thread().name})[journal_scraper]-[scrape_article_url] | {url}")
-    return article_data
-
+        logger.debug(f"thread: ({current_thread().name})[journal_scraper]-[scrape_article_url] | {url}")
+        return article_data, article_hash
+    return None, None
 
 def save_article_to_db(article_data, db_connection):
     # todo pass journal_search, journal, volume to insert_article_data to add them all in one to database

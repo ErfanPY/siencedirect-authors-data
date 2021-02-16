@@ -303,7 +303,11 @@ class Article(Page):
             authors_data = self._author_from_json()
             for index, author_element in enumerate(elements):
                 icons = self._author_icons(author_element)
-                authors_data[index]['is_coresponde'] = icons['is_coresponde']
+                try:
+                    authors_data[index]['is_coresponde'] = icons['is_coresponde']
+                except KeyError as e:
+                    print(e)
+                    print(self.url)
                 logger.debug('Author got, %s', authors_data[index])
 
             authors_objects = [Author(**author_data)
