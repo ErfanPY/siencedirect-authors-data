@@ -300,10 +300,10 @@ class Article(Page):
                 icons = self._author_icons(author_element)
                 try:
                     authors_data[index]['is_coresponde'] = icons['is_coresponde']
+                    logger.debug('Author got, %s', authors_data[index])
                 except KeyError as e:
                     print(e)
                     print(self.url)
-                logger.debug('Author got, %s', authors_data[index])
 
             authors_objects = [Author(**author_data)
                                for author_data in authors_data.values()]
