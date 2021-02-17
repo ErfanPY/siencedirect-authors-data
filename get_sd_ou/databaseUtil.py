@@ -60,6 +60,21 @@ def get_article_author_id(article_id, author_id, cnx=None):
     return 1 if fetch_res else 0
 
 
+def get_status(cnx):
+    cursor = cnx.cursor(buffered=True)
+    sql_queries = {'articles': 'SELECT count(*) FROM sciencedirect.articles',
+                   'authors': 'SELECT count(*) FROM sciencedirect.authors',
+                   'emails': 'SELECT count(*) FROM sciencedirect.authors where email is NOT NULL'}
+
+    sql_results = {}
+    for table_name, sql in sql_queries.items():
+        cursor.execute(sql)
+        result = cursor.fetchone()[0]
+        sql_results[table_name] = result
+    logger.info(f'{sql_results}')
+    return sql_results
+
+
 def connect_article_author(article_id, author_id, is_corresponde=0, cnx=None):
     cursor = cnx.cursor(buffered=True)
     sql = "INSERT IGNORE INTO sciencedirect.article_authors " \
