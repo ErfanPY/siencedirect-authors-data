@@ -541,7 +541,11 @@ class JournalsSearch(Page):
 
     @property
     def pages_count(self):
-        if self._pages_count is None:
-            page_counter_text = self.soup.select_one('.pagination-pages-label').text
-            self._pages_count = int(page_counter_text.split('of')[-1])
+        try:
+            if self._pages_count is None:
+                page_counter_text = self.soup.select_one('.pagination-pages-label').text
+                self._pages_count = int(page_counter_text.split('of')[-1])
+        except Exception as e:
+            print(self.url)
+            raise e
         return self._pages_count
