@@ -82,7 +82,7 @@ def deep_first_search_for_articles(self_node, article_url_queue, mysql_connectio
 def init_persistance():
     mysql_connection = init_db()
     mysql_cursor = mysql_connection.cursor()
-    results = mysql_cursor.execute("create table if not exists sciencedirect.visited (hash INTEGER);")
+    results = mysql_cursor.execute("create table if not exists sciencedirect.visited (hash BIGINT);")
     mysql_connection.commit()
 
     print("persistance made")
