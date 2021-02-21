@@ -224,8 +224,12 @@ class Article(Page):
         """ this is the main function of article it collect all data we need from an article (needed data is specified from input)
         it get authors name and email and affiliation from article 
         """
-        data = {'pii': self.pii, 'authors': self.authors, 'bibtex': self.bibtex, 'title': self.title,
+        try:
+            data = {'pii': self.pii, 'authors': self.authors, 'bibtex': self.bibtex, 'title': self.title,
                 'keywords': self.keywords}
+        except Exception as e:
+            print(self.url)
+            raise e
 
         return data
 
